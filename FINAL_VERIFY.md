@@ -1,44 +1,29 @@
-# Genius Clan — Final verification (2026-08-13)
+# Genius Clan — Final verification
 
-## Database connection
+## Database (GitHub private repo) — COMPLETE
 
-| Layer | Config | Status |
-|-------|--------|--------|
-| Durable store | Private repo `web-coder-lab/genius-clan-database` via GitHub Contents API | **Connected (HTTP 200 on indexes)** |
-| Local on Render | `DATABASE_URL=sqlite::memory:` | **No disk files** |
-| Render Postgres | Deleted | **None** |
-| Probe | `GET /health/store` | Returns GitHub reachability JSON |
+**Repo:** https://github.com/web-coder-lab/genius-clan-database (private)
 
-Env required on API:
-`GITHUB_DATA_TOKEN`, `GITHUB_DATA_OWNER`, `GITHUB_DATA_REPO`, `GITHUB_DATA_BRANCH`
+### Collections present
+users, sessions, email_tokens, two_fa_pending, matches, match_moves,
+custom_match_invites, shop_items (10 seeded), inventory, gifts,
+notifications, security_events, risk_scores, referrals, ad_views,
+daily_rewards, bug_reports, wallet_logs, coin_packages (3 catalog),
+legal (3), config (4), indexes (13+), _payment_deferred (unused)
 
-## Critical architecture gap (honest)
+### Payment
+**Deferred.** No gateway deposits/card data in this DB. Separate secure system later.
 
-Business logic (auth, wallet, matches, …) still mostly uses **sqlx SqlitePool**.
-That pool is **in-memory** on Render → data **does not survive** restart until each module is migrated to `GitHubStore`.
+### Render
+- No Postgres, no disk
+- DATABASE_URL=sqlite::memory:
+- Durable data only via GITHUB_DATA_* → private repo
 
-`GitHubStore` API is ready (`get_json` / `put_json` / indexes). Migration of all handlers = next engineering phase.
+### App code gap
+`GitHubStore` ready; most handlers still use in-memory sqlx until migrated.
 
-## Files removed / cleaned
-
-- `backend/Dockerfile` (duplicate; root `Dockerfile` is source of truth)
-- Local `frontend/node_modules` (gitignored; not in repo)
-- Render Postgres instance (already deleted)
-
-## Frontend routes — verified earlier (Phase 2)
-
-All App.jsx routes resolve; BottomNav OK; Profile→Settings OK; no empty onClick.
-
-## Known remaining issues (not fixed in this pass)
-
-1. Auth/wallet/game not yet reading/writing GitHub JSON (only store layer exists)
-2. Payment gateways are stubs (TODO in gateway.rs)
-3. Voice chat UI disabled
-4. Free Render sleep + cold start
-5. GitHub API rate limits for high traffic
-6. PAT in env should be fine-grained + rotated
-
-## Live
-
+### Live
 - https://genius-clan.onrender.com
-- https://genius-clan-api.onrender.com/health → `ok`
+- https://genius-clan-api.onrender.com/health
+
+Phase 4 (firewalls) starts on request.
