@@ -2,6 +2,8 @@
 FROM rust:latest AS builder
 WORKDIR /app
 
+# Migrations path: sqlx::migrate!("../database/migrations") from Cargo.toml dir
+COPY database /database
 COPY backend/Cargo.toml backend/Cargo.lock* ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs \
     && cargo build --release \
