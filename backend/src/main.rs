@@ -88,13 +88,16 @@ async fn main() -> anyhow::Result<()> {
     // Doc 9: "All routes are prefixed /api/v1." /health is deliberately
     // left outside that prefix — it's an infra/load-balancer convention,
     // not part of the application's documented API surface.
+    // Rate-limit only API routes — leave /health unrestricted so Render
+    // load-balancer health checks never get 429'd.
     let api_v1 = Router::new()
         .merge(auth::public_routes())
         .merge(wallet::public_routes())
         .merge(game::public_routes())
         .merge(anticheat::public_routes())
         .merge(social::public_routes())
-        .merge(protected);
+        .merge(protected)
+        .layer(governor_layer);
 
     // CORS: allow frontend (local + Render / custom domain). FRONTEND_BASE_URL
     // is the primary origin; Any is used as fallback so free-tier previews work.
@@ -114,7 +117,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         .nest("/api/v1", api_v1)
         .layer(cors)
-        .layer(governor_layer)
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", config.port);
