@@ -16,8 +16,9 @@ use config::AppConfig;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
-use tower_http::cors::{Any, CorsLayer};
-use axum::http::Method;
+use tower_http::cors::{AllowOrigin, CorsLayer};
+use tower_http::set_header::SetResponseHeaderLayer;
+use axum::http::{header, HeaderName, HeaderValue, Method};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -78,8 +79,8 @@ async fn main() -> anyhow::Result<()> {
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
             .key_extractor(SmartIpKeyExtractor)
-            .per_second(5)
-            .burst_size(20)
+            .per_second(3)
+            .burst_size(15)
             .finish()
             .expect("valid governor config")
     );
@@ -111,10 +112,22 @@ async fn main() -> anyhow::Result<()> {
         .merge(protected)
         .layer(governor_layer);
 
-    // CORS: allow frontend (local + Render / custom domain). FRONTEND_BASE_URL
-    // is the primary origin; Any is used as fallback so free-tier previews work.
+    // Phase 4 firewalls: CORS locked to known frontends (not Reflect Any).
+    let frontend = state.config.frontend_base_url.trim_end_matches('/').to_string();
+    let mut origins = vec![
+        frontend.clone(),
+        "http://localhost:5173".into(),
+        "http://127.0.0.1:5173".into(),
+        "https://genius-clan.onrender.com".into(),
+    ];
+    origins.sort();
+    origins.dedup();
+    let origin_list: Vec<HeaderValue> = origins
+        .iter()
+        .filter_map(|o| o.parse::<HeaderValue>().ok())
+        .collect();
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(AllowOrigin::list(origin_list))
         .allow_methods([
             Method::GET,
             Method::POST,
@@ -123,13 +136,47 @@ async fn main() -> anyhow::Result<()> {
             Method::DELETE,
             Method::OPTIONS,
         ])
-        .allow_headers(Any);
+        .allow_headers([
+            header::AUTHORIZATION,
+            header::CONTENT_TYPE,
+            header::ACCEPT,
+        ])
+        .allow_credentials(false);
+
+    // Security response headers (application firewall layer)
+    let security_headers = (
+        SetResponseHeaderLayer::overriding(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ),
+        SetResponseHeaderLayer::overriding(
+            header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
+        ),
+        SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("x-xss-protection"),
+            HeaderValue::from_static("0"),
+        ),
+        SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("referrer-policy"),
+            HeaderValue::from_static("strict-origin-when-cross-origin"),
+        ),
+        SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("permissions-policy"),
+            HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
+        ),
+    );
 
     let app = Router::new()
         .route("/health", get(health))
         .route("/health/store", get(health_store))
         .nest("/api/v1", api_v1)
         .layer(cors)
+        .layer(security_headers.0)
+        .layer(security_headers.1)
+        .layer(security_headers.2)
+        .layer(security_headers.3)
+        .layer(security_headers.4)
         .with_state(state);
 
     let addr = format!("0.0.0.0:{}", config.port);
