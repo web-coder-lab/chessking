@@ -10,7 +10,7 @@ mod anticheat;
 mod admin;
 mod social;
 
-use axum::{routing::get, Router};
+use axum::{extract::State, routing::get, Router};
 use axum::middleware::from_fn_with_state;
 use config::AppConfig;
 use sqlx::SqlitePool;
