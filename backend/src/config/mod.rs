@@ -25,8 +25,10 @@ impl AppConfig {
         dotenvy::dotenv().ok();
 
         Ok(Self {
+            // Empty or sqlite::memory: = no durable files on Render.
+            // Real data: GITHUB_DATA_* → private repo genius-clan-database.
             database_url: env::var("DATABASE_URL")
-                .unwrap_or_else(|_| "sqlite://chess_king.db".to_string()),
+                .unwrap_or_else(|_| "sqlite::memory:".to_string()),
             jwt_secret: env::var("JWT_SECRET")
                 .expect("JWT_SECRET must be set — never use a default in production"),
             jwt_access_ttl_minutes: env::var("JWT_ACCESS_TTL_MIN")

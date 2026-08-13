@@ -36,6 +36,11 @@ async fn main() -> anyhow::Result<()> {
     let config = AppConfig::load()?;
     let pool = db::init_pool(&config.database_url).await?;
 
+    let github_store = db::init_github_store_from_env();
+    if github_store.is_none() {
+        tracing::warn!("GITHUB_DATA_TOKEN not set — durable GitHub store offline");
+    }
+
     let state = AppState {
         db: pool.clone(),
         config: Arc::new(config.clone()),
@@ -43,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
         match_registry: game::state::MatchRegistry::new(),
         matchmaking: game::matchmaking::MatchmakingQueue::new(),
         email: Arc::new(email::EmailClient::new(&config.smtp_host, &config.smtp_user, &config.smtp_pass, config.smtp_port)),
+        github_store,
     };
 
     // Doc 5 §6: background wallet audit job, every 10 minutes.
