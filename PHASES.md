@@ -2,34 +2,57 @@
 
 | Phase | Name | Status |
 |-------|------|--------|
-| **1** | **Deploy** (Render free tier, name `genius-clan`) | **IN PROGRESS** |
-| 2 | All-to-all pages check | Pending |
+| 1 | Deploy (Render free tier, `genius-clan`) | Done (API + frontend live) |
+| **2** | **All-to-all pages check** | **DONE** |
 | 3 | Database attach (persistent) | Pending |
 | 4 | Firewalls attach | Pending |
-| 5 | Name change / branding / extras | Pending |
+| 5 | Name change / branding / extras | Partial |
 
-## Phase 1 — Deploy
+## Phase 2 report — Pages (no Docker)
 
-**Services (free plan):**
-- `genius-clan-api` — Rust API (Docker)
-- `genius-clan` — React static site
+### Routes registered (App.jsx)
+All 26 page components have matching routes. Catch-all `*` → `/auth`.
 
-**Files added:**
-- `Dockerfile` (repo root)
-- `render.yaml` (Blueprint)
-- CORS on API for browser clients
+### Bottom nav (5 tabs)
+| Tab | Path | Page has BottomNav |
+|-----|------|-------------------|
+| Home | /dashboard | Yes |
+| Wallet | /wallet | Yes |
+| Play | /play | Yes |
+| Leaderboard | /leaderboard | Yes |
+| Profile | /profile | Yes |
 
-**You must provide:** Render API token (or Blueprint connect via GitHub)
+### Page map + navigation integrity
 
-**Limits (free tier):**
-- Services spin down after idle ~15 min
-- SQLite on ephemeral disk = data lost on restart (fixed in Phase 3)
-- Cold start can take 30–60s
+| Page | Route | Key actions | Status |
+|------|-------|-------------|--------|
+| Splash | / | Language → /auth | OK (title → Genius Clan) |
+| Auth | /auth | Login / Register / Forgot | OK |
+| Reset password | /reset-password | Token + new password | OK |
+| Dashboard | /dashboard | Claim reward, Play, shortcuts | OK |
+| Wallet | /wallet | Packages → checkout, history | OK |
+| Checkout | /wallet/checkout | Gateways + poll status | OK |
+| Shop | /shop | Buy items | OK |
+| Inventory | /inventory | Equip (+ ?category=avatar) | OK |
+| Play | /play | Queue + custom match link | OK |
+| ChessBoard | /board/:id | Moves, resign, draw, hint, gift | OK (mute disabled honestly) |
+| Leaderboard | /leaderboard | Scope tabs, tap → profile | OK |
+| Profile | /profile, /:username | History, gifts, send gift | OK + **Settings gear added** |
+| Profile settings | /profile/settings | Edit bio, password, email | OK |
+| Settings | /settings | 2FA, sessions, legal, logout | OK (now reachable from Profile) |
+| 2FA / Sessions / Bug / Support / Legal | /settings/* | Full forms | OK |
+| Invite | /invite | Referral link + claim | OK |
+| Custom match | /custom-match | Search, invite, accept, poll | OK |
+| Notifications | /notifications | Per-type deep links | OK |
 
-## After Phase 1 goes live
+### Fixes in Phase 2
+1. Profile → Settings (⚙️) link was missing — **added**
+2. Splash title Chess King → **Genius Clan**
 
-1. Set `FRONTEND_BASE_URL` on API to the static site URL  
-2. Set `VITE_API_BASE` / `VITE_WS_BASE` on static site to API URL  
-3. Redeploy frontend once  
+### Intentionally limited (not bugs)
+- Language row disabled (no i18n)
+- Voice mute buttons disabled (no WebRTC UI)
+- Hint engine = first legal move placeholder
 
-Then → Phase 2 (pages check).
+### Empty onClick
+None found.

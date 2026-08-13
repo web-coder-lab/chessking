@@ -62,9 +62,19 @@ export default function Profile({ user }) {
       <img src="/assets/default-avatar.png" alt="" className="ck-profile__avatar" />
 
       {isMe && (
-        <button className="ck-profile__edit-btn icon-tap-target" onClick={() => navigate('/profile/settings')} aria-label="Edit profile">
-          ✏️
-        </button>
+        <>
+          <button className="ck-profile__edit-btn icon-tap-target" onClick={() => navigate('/profile/settings')} aria-label="Edit profile">
+            ✏️
+          </button>
+          <button
+            className="ck-profile__edit-btn icon-tap-target"
+            style={{ right: 'calc(var(--space-4) + 48px)' }}
+            onClick={() => navigate('/settings')}
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+        </>
       )}
 
       <main className="ck-profile__body">
