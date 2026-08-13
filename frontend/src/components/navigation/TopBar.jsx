@@ -11,7 +11,7 @@ export default function TopBar({ avatarUrl, coinBalance, hasUnread, onBellClick 
     <header className="ck-topbar">
       <Link to="/profile" className="ck-topbar__avatar-link" aria-label="Profile">
         <img
-          src={avatarUrl || '/assets/default-avatar.png'}
+          src={avatarUrl || '/assets/default-avatar.svg'}
           alt=""
           className="ck-topbar__avatar"
         />

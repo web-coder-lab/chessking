@@ -128,7 +128,7 @@ export default function CustomMatch({ user }) {
       <div style={{ marginTop: 'var(--space-3)' }}>
         {results.map((r) => (
           <Card key={r.id} className="ck-custom-match__result-row">
-            <img src="/assets/default-avatar.png" alt="" className="ck-custom-match__avatar" />
+            <img src="/assets/default-avatar.svg" alt="" className="ck-custom-match__avatar" />
             <span style={{ flex: 1 }}>{r.username}</span>
             <Button fullWidth={false} onClick={() => handleInvite(r)}>Invite</Button>
           </Card>

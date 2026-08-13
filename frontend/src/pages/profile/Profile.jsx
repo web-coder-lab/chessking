@@ -59,7 +59,7 @@ export default function Profile({ user }) {
   return (
     <div className="ck-profile">
       <div className="ck-profile__banner" />
-      <img src="/assets/default-avatar.png" alt="" className="ck-profile__avatar" />
+      <img src="/assets/default-avatar.svg" alt="" className="ck-profile__avatar" />
 
       {isMe && (
         <>

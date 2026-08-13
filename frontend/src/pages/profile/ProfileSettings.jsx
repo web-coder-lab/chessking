@@ -42,7 +42,7 @@ export default function ProfileSettings({ user }) {
       <h1 className="page-title" style={{ marginBottom: 'var(--space-6)' }}>Edit Profile</h1>
 
       <button className="ck-profile__avatar" style={{ margin: '0 0 var(--space-4)' }} onClick={() => navigate('/inventory?category=avatar')}>
-        <img src="/assets/default-avatar.png" alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+        <img src="/assets/default-avatar.svg" alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
       </button>
 
       <div className="ck-input-group">

@@ -61,7 +61,7 @@ export default function Leaderboard({ user }) {
           {rest.map((row) => (
             <Card key={row.rank} className="ck-leaderboard__row" onClick={() => navigate(`/profile/${row.username}`)}>
               <span className="ck-leaderboard__rank tabular-nums">{row.rank}</span>
-              <img src="/assets/default-avatar.png" alt="" className="ck-leaderboard__avatar" />
+              <img src="/assets/default-avatar.svg" alt="" className="ck-leaderboard__avatar" />
               <span style={{ flex: 1 }}>{row.username}</span>
               <span className="tabular-nums">{row.rating}</span>
             </Card>
@@ -87,7 +87,7 @@ function PodiumSpot({ row, size, ring }) {
   return (
     <div className="ck-leaderboard__podium-spot" onClick={() => row?.username && navigate(`/profile/${row.username}`)}>
       <img
-        src="/assets/default-avatar.png"
+        src="/assets/default-avatar.svg"
         alt=""
         style={{ width: avatarSize, height: avatarSize, border: `3px solid ${ring}` }}
         className="ck-leaderboard__podium-avatar"

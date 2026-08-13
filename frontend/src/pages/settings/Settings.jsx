@@ -47,7 +47,7 @@ export default function Settings({ user }) {
       <section className="ck-settings__section">
         <h2 className="ck-settings__section-title">Preferences</h2>
         <SettingsRow icon="🔔" label="Notifications" toggle value={notifsEnabled} onToggle={handleToggleNotifs} />
-        <SettingsRow icon="🌐" label="Language" value="English" />
+        <SettingsRow icon="🌐" label="Language" value="English" onClick={() => window.alert("Only English is available right now.")} />
       </section>
 
       <section className="ck-settings__section">
@@ -55,6 +55,7 @@ export default function Settings({ user }) {
         <SettingsRow icon="🐞" label="Bug Report" onClick={() => navigate('/settings/bug-report')} />
         <SettingsRow icon="💬" label="Support Team" onClick={() => navigate('/settings/support')} />
         <SettingsRow icon="📄" label="Privacy Policy" onClick={() => navigate('/settings/privacy-policy')} />
+        <SettingsRow icon="📜" label="Terms of Service" onClick={() => navigate('/settings/terms-of-service')} />
         <SettingsRow icon="ℹ️" label="About" onClick={() => navigate('/settings/about')} />
       </section>
 

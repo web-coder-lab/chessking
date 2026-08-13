@@ -192,7 +192,7 @@ export default function ChessBoard({ user }) {
       )}
 
       <div className="ck-board__info-bar">
-        <img src="/assets/default-avatar.png" alt="" className="ck-board__info-avatar" />
+        <img src="/assets/default-avatar.svg" alt="" className="ck-board__info-avatar" />
         <div className="ck-board__info-text">
           <span className="ck-board__info-username">{opponentUsername || 'Opponent'}</span>
         </div>
