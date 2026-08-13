@@ -27,6 +27,8 @@ pub struct AppState {
     pub match_registry: game::state::MatchRegistry,
     pub matchmaking: game::matchmaking::MatchmakingQueue,
     pub email: Arc<email::EmailClient>,
+    /// Durable JSON store → private GitHub repo (None if GITHUB_DATA_TOKEN unset)
+    pub github_store: Option<db::SharedGitHubStore>,
 }
 
 #[tokio::main]
