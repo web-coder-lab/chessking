@@ -4,49 +4,35 @@
 |-------|------|--------|
 | 1 | Deploy (Render free tier) | DONE |
 | 2 | All-to-all pages check | DONE |
-| **3** | **Database attach** | **DONE (infra) — code still SQLite** |
+| 3 | Database attach | **SUPERSEDED** |
+| 3′ | **Zero data on Render + private DB repo + Firebase** | **DONE (policy + infra)** |
 | 4 | Firewalls attach | Pending |
-| 5 | Name change / branding / extras | Partial |
+| 5 | Name change / branding | Partial |
 
-## Live URLs
-- Web: https://genius-clan.onrender.com
-- API: https://genius-clan-api.onrender.com
-- DB dashboard: https://dashboard.render.com/d/dpg-d9uptvegekts73d1lnsg-a
+## Data policy (mandatory)
 
-## Phase 3 — Database attach
+**Render pe koi bhi durable app data nahi.**
 
-### What was attached
-| Resource | Details |
-|----------|---------|
-| **Render Postgres** | `genius-clan-db` |
-| Plan | **Free** (expires ~30 days from create — renew/upgrade before then) |
-| Region | oregon |
-| Version | 16 |
-| Status | **available** |
-| DB name | `genius_clan_db` |
-| User | `genius_clan_db_user` |
+| What | Where |
+|------|--------|
+| API + static site | Render (compute only) |
+| User / match / wallet data | **Firebase Firestore** (live) |
+| Schema SQL archive | Private repo only |
 
-### Connection
-- **Internal** (from API service on Render): set as env `DATABASE_URL_POSTGRES`
-- **External**: available in Render dashboard → Connection info
+### Private database repo
+https://github.com/web-coder-lab/genius-clan-database (**private**)
 
-### Why app still uses SQLite
-Backend is built on **sqlx + SQLite** (~200 references).  
-Switching live traffic to Postgres needs a full dialect + type migration (`SqlitePool` → `PgPool`, migration SQL, datetime, etc.).
+Contains:
+- `schema/migrations/*` (legacy SQL reference)
+- `POLICY.md` — zero data on Render
+- Firebase collection map
 
-**Persistent disk** for SQLite needs a **paid** web instance (free cannot attach disks).
+### Render Postgres
+**Deleted.** No Render DB instances for Genius Clan.
 
-### Current data behaviour
-- `DATABASE_URL=sqlite:///data/genius_clan.db` (ephemeral on free web)
-- Redeploy / sleep → local SQLite resets
-- Postgres is **ready** for Phase 3b (code migration)
+### Env on API
+- `DATABASE_URL` cleared (no local SQLite file store on Render)
+- Next: `FIREBASE_*` service account env vars when Firestore is wired
 
-### Phase 3b (optional follow-up)
-1. sqlx features → `postgres`
-2. Replace pool types across backend
-3. Port `database/migrations/*.sql` to Postgres
-4. Point `DATABASE_URL` to internal Postgres URL
-5. Redeploy API
-
-### Security note
-Rotate DB password in dashboard if this chat is shared; connection strings appeared in deploy tooling.
+### Code note
+Backend still has SQLite sqlx code paths. Until Firestore is wired, API must not rely on Render-local files. Firestore migration is the next engineering step after Phase 4 or on request.
