@@ -15,7 +15,7 @@ use axum::middleware::from_fn_with_state;
 use config::AppConfig;
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_governor::{governor::GovernorConfigBuilder, key_extractor::SmartIpKeyExtractor, GovernorLayer};
 use tower_http::cors::{Any, CorsLayer};
 use axum::http::Method;
 
@@ -64,8 +64,12 @@ async fn main() -> anyhow::Result<()> {
     // be layered on top of specific routes later if needed — this
     // catches the "hundreds of requests/second from one client" case
     // §11 calls out as "hard-blocked ... regardless of score."
+    // SmartIpKeyExtractor reads X-Forwarded-For / X-Real-IP so rate limits
+    // work correctly behind Render's reverse proxy (PeerIp alone fails with
+    // "Unable To Extract Key!" on every request).
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
+            .key_extractor(SmartIpKeyExtractor)
             .per_second(5)
             .burst_size(20)
             .finish()
