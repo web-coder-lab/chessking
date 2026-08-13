@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/target/
+**/target/
+
+# Environment / secrets
+backend/.env
+.env
+*.db
+*.db-shm
+*.db-wal
+chess_king.db*
+
+# Build
+frontend/dist/
+backend/target/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Cargo
+Cargo.lock.bak

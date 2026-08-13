@@ -1,0 +1,119 @@
+.ck-wallet {
+  min-height: 100vh;
+  padding-top: calc(var(--topbar-height) + var(--space-4));
+  padding-bottom: 84px;
+}
+
+.ck-wallet__body {
+  padding: 0 var(--screen-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* §2.4: large balance card, full-width, gold gradient, dark text */
+.ck-wallet__balance-card {
+  background: linear-gradient(135deg, #E8C766, var(--accent-gold));
+  border-radius: var(--radius-card);
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ck-wallet__balance-subtitle {
+  color: var(--bg-primary);
+  opacity: 0.7;
+  font-size: var(--text-caption-size);
+}
+
+.ck-wallet__balance-amount {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--bg-primary);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* §2.4: package grid, 2 columns */
+.ck-wallet__package-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.ck-wallet__package-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  padding: var(--space-4) var(--space-3);
+}
+
+.ck-wallet__bonus-ribbon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--success-green);
+  color: var(--bg-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.ck-wallet__package-coins {
+  font-size: 16px;
+}
+
+.ck-wallet__package-price {
+  font-size: var(--text-caption-size);
+}
+
+/* §2.4: transaction history rows */
+.ck-wallet__tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ck-wallet__tx-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.ck-wallet__tx-icon {
+  font-size: 20px;
+}
+
+.ck-wallet__tx-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-wallet__tx-label {
+  font-size: var(--text-body-size);
+  color: var(--text-primary);
+}
+
+.ck-wallet__tx-time {
+  font-size: var(--text-caption-size);
+}
+
+.ck-wallet__tx-amount {
+  font-size: var(--text-body-size);
+}
+
+.ck-wallet__tx-amount--positive {
+  color: var(--success-green);
+}
+
+.ck-wallet__tx-amount--negative {
+  color: var(--danger-red);
+}

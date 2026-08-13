@@ -1,0 +1,65 @@
+.ck-inventory {
+  min-height: 100vh;
+  padding-top: calc(var(--topbar-height) + var(--space-4));
+  padding-bottom: 84px;
+}
+
+.ck-inventory__body {
+  padding: 0 var(--screen-padding-x);
+}
+
+/* §2.6: equipped item — gold border + subtle glow */
+.ck-inventory__item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: border-color var(--transition-standard), box-shadow var(--transition-standard);
+}
+
+.ck-inventory__item-card--equipped {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 1px var(--accent-gold), 0 0 16px rgba(212, 175, 55, 0.25);
+}
+
+.ck-inventory__equipped-label {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+/* Bottom sheet */
+.ck-inventory__sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  z-index: 200;
+}
+
+.ck-inventory__sheet {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: var(--space-6) var(--space-4);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ck-inventory__sheet-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+}

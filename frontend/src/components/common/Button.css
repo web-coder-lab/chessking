@@ -1,0 +1,72 @@
+.ck-button {
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-button);
+  font-family: var(--font-body);
+  font-size: var(--text-button-size);
+  font-weight: var(--text-button-weight);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  transition: transform var(--transition-standard), background var(--transition-standard), opacity var(--transition-standard);
+  min-width: var(--min-tap-target);
+  min-height: var(--min-tap-target);
+}
+
+.ck-button--full {
+  width: 100%;
+}
+
+.ck-button--pill {
+  border-radius: var(--radius-pill);
+}
+
+/* --- Variants --- */
+.ck-button--primary {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+}
+.ck-button--primary:hover:not(:disabled) {
+  background: #e0bb45;
+}
+
+.ck-button--outline {
+  background: transparent;
+  color: var(--accent-gold);
+  border: 1.5px solid var(--accent-gold);
+}
+
+.ck-button--destructive {
+  background: transparent;
+  color: var(--danger-red);
+}
+
+/* --- §3 States --- */
+
+/* Pressed: scale 0.96-0.98, slightly darker */
+.ck-button--pressed {
+  transform: scale(0.96);
+  filter: brightness(0.92);
+}
+
+/* Disabled: opacity ~0.4, no pointer events */
+.ck-button:disabled {
+  opacity: var(--disabled-opacity);
+  pointer-events: none;
+}
+
+/* Loading: spinner replaces label, component disabled (handled via :disabled) */
+.ck-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: ck-spin 0.7s linear infinite;
+}
+
+@keyframes ck-spin {
+  to { transform: rotate(360deg); }
+}

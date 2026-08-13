@@ -1,0 +1,61 @@
+.ck-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 64px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  z-index: 50;
+}
+
+.ck-bottom-nav__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  min-width: var(--min-tap-target);
+  min-height: var(--min-tap-target);
+  justify-content: center;
+  transition: color var(--transition-standard);
+}
+
+.ck-bottom-nav__tab--active {
+  color: var(--accent-gold);
+}
+
+.ck-bottom-nav__icon {
+  font-size: 20px;
+}
+
+.ck-bottom-nav__label {
+  font-size: 10px;
+}
+
+/* Play tab: elevated FAB, sits above the bar line, gold circle */
+.ck-bottom-nav__play {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #E8C766, var(--accent-gold));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-18px);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.5);
+  text-decoration: none;
+  border: 3px solid var(--bg-primary);
+}
+
+.ck-bottom-nav__play-icon {
+  font-size: 26px;
+  color: var(--bg-primary);
+}

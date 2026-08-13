@@ -1,0 +1,158 @@
+.ck-gift-anim {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  /* Deliberately no background here - the screen underneath stays fully
+     visible, exactly as asked ("transparent"). */
+  overflow: hidden;
+}
+
+.ck-gift-anim__stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1px;
+  height: 1px;
+}
+
+.ck-gift-anim__emoji {
+  position: relative;
+  display: block;
+  line-height: 1;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4));
+  animation: ck-gift-emoji var(--duration) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.ck-gift-anim--simple .ck-gift-anim__emoji { font-size: 56px; }
+.ck-gift-anim--nice .ck-gift-anim__emoji { font-size: 72px; }
+.ck-gift-anim--premium .ck-gift-anim__emoji { font-size: 88px; }
+.ck-gift-anim--vip .ck-gift-anim__emoji {
+  font-size: 112px;
+  filter: drop-shadow(0 6px 24px rgba(212, 175, 55, 0.5));
+}
+
+@keyframes ck-gift-emoji {
+  0%   { opacity: 0; transform: scale(0.4) translateY(24px) rotate(-8deg); }
+  18%  { opacity: 1; transform: scale(1.12) translateY(0) rotate(3deg); }
+  30%  { transform: scale(0.96) rotate(-1deg); }
+  42%  { transform: scale(1.03) rotate(0deg); }
+  50%  { transform: scale(1) translateY(0); }
+  82%  { opacity: 1; transform: scale(1) translateY(-6px); }
+  100% { opacity: 0; transform: scale(0.92) translateY(-36px); }
+}
+
+.ck-gift-anim__label {
+  margin-top: var(--space-4);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  animation: ck-gift-label var(--duration) ease-out forwards;
+}
+
+.ck-gift-anim--vip .ck-gift-anim__label {
+  color: var(--accent-gold);
+  font-size: 17px;
+  letter-spacing: 0.5px;
+}
+
+@keyframes ck-gift-label {
+  0%   { opacity: 0; transform: translateY(6px); }
+  25%  { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- Particles (Nice/Premium/VIP) --- */
+.ck-gift-anim__particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--color);
+  border-radius: 2px;
+  opacity: 0;
+  animation: ck-gift-particle var(--duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--delay);
+}
+
+.ck-gift-anim__particle--spark {
+  background: none;
+  width: auto;
+  height: auto;
+  font-size: 16px;
+  line-height: 1;
+}
+
+@keyframes ck-gift-particle {
+  0%   { opacity: 0; transform: translate(-50%, -50%) translate(0, 0) rotate(0deg) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) translate(calc(var(--tx) * 0.3), calc(var(--ty) * 0.3)) rotate(var(--rotate)) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) rotate(calc(var(--rotate) * 2)) scale(0.6); }
+}
+
+/* --- Pulse rings (Premium/VIP) --- */
+.ck-gift-anim__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold);
+  opacity: 0;
+  animation: ck-gift-ring var(--duration) ease-out forwards;
+}
+
+.ck-gift-anim__ring--2 {
+  border-color: var(--success-green);
+  animation-delay: 0.2s;
+}
+
+@keyframes ck-gift-ring {
+  0%   { opacity: 0.7; transform: scale(0.3); }
+  60%  { opacity: 0.25; }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+
+/* --- Shimmer sweep (VIP only - the one place the boldness is spent) --- */
+.ck-gift-anim__shimmer {
+  position: absolute;
+  inset: -50% -20%;
+  background: linear-gradient(115deg, transparent 42%, rgba(212, 175, 55, 0.18) 50%, transparent 58%);
+  animation: ck-gift-shimmer var(--duration) ease-in-out forwards;
+}
+
+@keyframes ck-gift-shimmer {
+  0%   { transform: translateX(-60%); opacity: 0; }
+  15%  { opacity: 1; }
+  55%  { opacity: 1; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-gift-anim__emoji,
+  .ck-gift-anim__label,
+  .ck-gift-anim__particle,
+  .ck-gift-anim__ring,
+  .ck-gift-anim__shimmer {
+    animation-duration: 600ms !important;
+    animation-name: ck-gift-reduced-fade !important;
+  }
+}
+
+@keyframes ck-gift-reduced-fade {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}

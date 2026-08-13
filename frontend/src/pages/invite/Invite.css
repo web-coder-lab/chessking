@@ -1,0 +1,54 @@
+.ck-invite__link-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  padding: var(--space-3);
+}
+
+.ck-invite__link-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+}
+
+.ck-invite__copy-btn {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-caption-size);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ck-invite__progress-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ck-invite__claim-btn {
+  background: var(--success-green);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-caption-size);
+  cursor: pointer;
+}
+
+.ck-invite__pending-badge {
+  color: var(--text-secondary);
+  font-size: var(--text-caption-size);
+}

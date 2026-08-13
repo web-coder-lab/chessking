@@ -1,0 +1,59 @@
+.ck-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-width: 430px;
+  margin: 0 auto;
+  height: var(--topbar-height);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--screen-padding-x);
+  z-index: 50;
+}
+
+.ck-topbar__avatar-link {
+  display: block;
+}
+
+.ck-topbar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--accent-gold);
+}
+
+.ck-topbar__coins {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--bg-surface);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  text-decoration: none;
+  color: var(--text-primary);
+  font-size: var(--text-body-size);
+}
+
+.ck-topbar__bell {
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.ck-topbar__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  border: 1.5px solid var(--bg-primary);
+}

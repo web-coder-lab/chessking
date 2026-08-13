@@ -1,0 +1,123 @@
+.ck-shop {
+  min-height: 100vh;
+  padding-top: calc(var(--topbar-height) + var(--space-4));
+  padding-bottom: 84px;
+}
+
+.ck-shop__body {
+  padding: 0 var(--screen-padding-x);
+}
+
+/* §2.5: horizontal segment switcher */
+.ck-shop__segments {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.ck-shop__segment {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-button-weight);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition-standard);
+}
+
+.ck-shop__segment--active {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  border-color: var(--accent-gold);
+}
+
+/* §2.5: 2-column grid, square thumbnail cards */
+.ck-shop__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.ck-shop__item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.ck-shop__item-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--space-2);
+  background: var(--bg-surface-hover);
+}
+
+.ck-shop__item-name {
+  font-size: var(--text-body-size);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ck-shop__item-price {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+}
+
+/* §2.5: green "Owned" ribbon, top-right, replaces Buy button */
+.ck-shop__owned-ribbon {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: var(--success-green);
+  color: var(--bg-primary);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  z-index: 1;
+}
+
+/* §2.5: preview modal */
+.ck-shop__modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: var(--screen-padding-x);
+}
+
+.ck-shop__modal {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  text-align: center;
+}
+
+.ck-shop__modal-image {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+}
+
+.ck-shop__modal-price {
+  font-size: 18px;
+  color: var(--accent-gold);
+}

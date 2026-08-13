@@ -1,0 +1,33 @@
+.ck-custom-match__result-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.ck-custom-match__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ck-custom-match__history-row {
+  padding: var(--space-2) 0;
+  font-size: var(--text-caption-size);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ck-custom-match__pulse-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  animation: ck-pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes ck-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}

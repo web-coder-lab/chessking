@@ -1,0 +1,39 @@
+.ck-toast {
+  position: fixed;
+  left: var(--screen-padding-x);
+  right: var(--screen-padding-x);
+  bottom: 84px; /* clears the bottom nav */
+  max-width: 398px;
+  margin: 0 auto;
+  background: var(--bg-surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-card);
+  animation: ck-toast-in var(--transition-standard);
+  z-index: 100;
+}
+
+@keyframes ck-toast-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ck-toast-message {
+  color: var(--text-primary);
+  font-size: var(--text-body-size);
+}
+
+.ck-toast-action {
+  background: none;
+  border: none;
+  color: var(--accent-gold);
+  font-weight: var(--text-button-weight);
+  font-size: var(--text-body-size);
+  cursor: pointer;
+  white-space: nowrap;
+}

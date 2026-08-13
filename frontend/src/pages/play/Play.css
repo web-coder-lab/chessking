@@ -1,0 +1,100 @@
+.ck-play {
+  min-height: 100vh;
+  padding-top: calc(var(--topbar-height) + var(--space-4));
+  padding-bottom: 84px;
+}
+
+.ck-play__body {
+  padding: 0 var(--screen-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ck-play__option-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  cursor: pointer;
+  transition: transform var(--transition-standard);
+}
+.ck-play__option-card:active { transform: scale(0.98); }
+
+.ck-play__option-icon { font-size: 32px; }
+
+/* Full-screen states: searching, VS transition */
+.ck-play-fullscreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--screen-padding-x);
+  text-align: center;
+}
+
+.ck-play-radar {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ck-play-radar-ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent-gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ck-radar-pulse 2.5s ease-out infinite;
+}
+.ck-play-radar-ring:nth-child(2) { animation-delay: 1.25s; }
+
+@keyframes ck-radar-pulse {
+  0% { transform: scale(0.4); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.ck-play-knight {
+  font-size: 48px;
+  color: var(--accent-gold);
+  z-index: 1;
+}
+
+/* VS transition card */
+.ck-vs-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  animation: ck-vs-in 300ms ease-out;
+}
+
+@keyframes ck-vs-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ck-vs-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-body-size);
+}
+
+.ck-vs-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-gold);
+}
+
+.ck-vs-label {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}

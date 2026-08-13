@@ -1,0 +1,93 @@
+.ck-board-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--screen-padding-x);
+  gap: var(--space-2);
+}
+
+.ck-board-screen--ended {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ck-board__disconnect-banner {
+  background: rgba(245, 166, 35, 0.15);
+  color: #F5A623;
+  border: 1px solid #F5A623;
+  border-radius: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-caption-size);
+  text-align: center;
+}
+
+.ck-board__info-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border-radius: var(--radius-button);
+}
+
+.ck-board__info-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ck-board__info-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-board__info-username {
+  font-size: var(--text-body-size);
+  color: var(--text-primary);
+}
+
+.ck-board__actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.ck-board__action-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption-size);
+  cursor: pointer;
+}
+
+.ck-board__history-strip {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--text-caption-size);
+  text-align: center;
+  cursor: pointer;
+  padding: var(--space-1);
+}
+
+.ck-board__history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  max-height: 80px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  background: var(--bg-surface);
+  border-radius: var(--space-2);
+}
+
+.ck-board__history-move {
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}

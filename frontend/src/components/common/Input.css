@@ -1,0 +1,59 @@
+.ck-input-group {
+  margin-bottom: var(--space-4);
+}
+
+.ck-input-label {
+  display: block;
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.ck-input-wrap {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  padding: 0 var(--space-4);
+  transition: border-color var(--transition-standard), box-shadow var(--transition-standard);
+}
+
+.ck-input-wrap:focus-within {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); /* gold focus-ring */
+}
+
+/* Error: red border on THIS input only, not full form */
+.ck-input-wrap--error {
+  border-color: var(--danger-red);
+}
+
+.ck-input-icon {
+  color: var(--text-secondary);
+  margin-right: var(--space-3);
+  display: flex;
+  align-items: center;
+}
+
+.ck-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  height: 100%;
+}
+
+.ck-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.ck-input-error {
+  color: var(--danger-red);
+  font-size: var(--text-caption-size);
+  margin: var(--space-1) 0 0 0;
+}

@@ -1,0 +1,84 @@
+.ck-gift-picker__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  z-index: 200;
+}
+
+.ck-gift-picker__sheet {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+  width: 100%;
+  max-height: 75vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.ck-gift-picker__tier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ck-gift-picker__tier-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: var(--space-2);
+}
+
+.ck-gift-picker__tier:last-child .ck-gift-picker__tier-label {
+  color: var(--accent-gold);
+  border-bottom-color: var(--accent-gold-dim);
+}
+
+.ck-gift-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.ck-gift-picker__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  cursor: pointer;
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--bg-primary);
+}
+
+.ck-gift-picker__option:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ck-gift-picker__tier:last-child .ck-gift-picker__option {
+  border-color: var(--accent-gold-dim);
+}
+
+.ck-gift-picker__icon {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.ck-gift-picker__name {
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.ck-gift-picker__price {
+  font-size: 12px;
+  color: var(--text-secondary);
+}

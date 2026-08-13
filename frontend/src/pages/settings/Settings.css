@@ -1,0 +1,106 @@
+.ck-settings {
+  min-height: 100vh;
+  padding-bottom: 84px;
+}
+
+.ck-settings__section {
+  margin-top: var(--space-6);
+}
+
+.ck-settings__section-title {
+  font-family: var(--font-body);
+  font-size: var(--text-caption-size);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 var(--screen-padding-x);
+  margin-bottom: var(--space-2);
+}
+
+.ck-settings__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--screen-padding-x);
+  color: var(--text-primary);
+  font-size: var(--text-body-size);
+  cursor: pointer;
+  text-align: left;
+}
+
+.ck-settings__row-icon {
+  font-size: 18px;
+}
+
+.ck-settings__row-label {
+  flex: 1;
+}
+
+.ck-settings__row--danger {
+  color: var(--danger-red);
+  margin-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ck-settings__switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+}
+
+.ck-settings__switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ck-settings__switch-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border-subtle);
+  border-radius: 999px;
+  transition: background var(--transition-standard);
+}
+
+.ck-settings__switch-track::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  transition: transform var(--transition-standard);
+}
+
+.ck-settings__switch input:checked + .ck-settings__switch-track {
+  background: var(--accent-gold);
+}
+
+.ck-settings__switch input:checked + .ck-settings__switch-track::before {
+  transform: translateX(18px);
+  background: var(--bg-primary);
+}
+
+.ck-bugreport__upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  border: 2px dashed var(--border-subtle);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.ck-bugreport__preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

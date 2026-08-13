@@ -1,0 +1,40 @@
+.ck-splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--screen-padding-x);
+}
+
+.ck-splash__logo {
+  font-size: 80px;
+  color: var(--accent-gold);
+  animation: ck-fade-in 600ms ease-out;
+  margin-bottom: var(--space-3);
+}
+
+@keyframes ck-fade-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.ck-splash__lang-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ck-splash__lang-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-primary);
+  font-size: var(--text-body-size);
+  cursor: pointer;
+}

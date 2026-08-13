@@ -1,0 +1,55 @@
+.ck-notif-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+}
+
+.ck-notif-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 85%;
+  max-width: 360px;
+  height: 100%;
+  background: var(--bg-surface);
+  animation: ck-drawer-in 250ms ease-out;
+  overflow-y: auto;
+}
+
+@keyframes ck-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.ck-notif-drawer__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-notif-drawer__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.ck-notif-drawer__row--unread {
+  border-left-color: var(--accent-gold);
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.ck-notif-drawer__icon { font-size: 18px; }
+
+.ck-notif-drawer__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--text-body-size);
+}
