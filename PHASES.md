@@ -2,57 +2,51 @@
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Deploy (Render free tier, `genius-clan`) | Done (API + frontend live) |
-| **2** | **All-to-all pages check** | **DONE** |
-| 3 | Database attach (persistent) | Pending |
+| 1 | Deploy (Render free tier) | DONE |
+| 2 | All-to-all pages check | DONE |
+| **3** | **Database attach** | **DONE (infra) — code still SQLite** |
 | 4 | Firewalls attach | Pending |
 | 5 | Name change / branding / extras | Partial |
 
-## Phase 2 report — Pages (no Docker)
+## Live URLs
+- Web: https://genius-clan.onrender.com
+- API: https://genius-clan-api.onrender.com
+- DB dashboard: https://dashboard.render.com/d/dpg-d9uptvegekts73d1lnsg-a
 
-### Routes registered (App.jsx)
-All 26 page components have matching routes. Catch-all `*` → `/auth`.
+## Phase 3 — Database attach
 
-### Bottom nav (5 tabs)
-| Tab | Path | Page has BottomNav |
-|-----|------|-------------------|
-| Home | /dashboard | Yes |
-| Wallet | /wallet | Yes |
-| Play | /play | Yes |
-| Leaderboard | /leaderboard | Yes |
-| Profile | /profile | Yes |
+### What was attached
+| Resource | Details |
+|----------|---------|
+| **Render Postgres** | `genius-clan-db` |
+| Plan | **Free** (expires ~30 days from create — renew/upgrade before then) |
+| Region | oregon |
+| Version | 16 |
+| Status | **available** |
+| DB name | `genius_clan_db` |
+| User | `genius_clan_db_user` |
 
-### Page map + navigation integrity
+### Connection
+- **Internal** (from API service on Render): set as env `DATABASE_URL_POSTGRES`
+- **External**: available in Render dashboard → Connection info
 
-| Page | Route | Key actions | Status |
-|------|-------|-------------|--------|
-| Splash | / | Language → /auth | OK (title → Genius Clan) |
-| Auth | /auth | Login / Register / Forgot | OK |
-| Reset password | /reset-password | Token + new password | OK |
-| Dashboard | /dashboard | Claim reward, Play, shortcuts | OK |
-| Wallet | /wallet | Packages → checkout, history | OK |
-| Checkout | /wallet/checkout | Gateways + poll status | OK |
-| Shop | /shop | Buy items | OK |
-| Inventory | /inventory | Equip (+ ?category=avatar) | OK |
-| Play | /play | Queue + custom match link | OK |
-| ChessBoard | /board/:id | Moves, resign, draw, hint, gift | OK (mute disabled honestly) |
-| Leaderboard | /leaderboard | Scope tabs, tap → profile | OK |
-| Profile | /profile, /:username | History, gifts, send gift | OK + **Settings gear added** |
-| Profile settings | /profile/settings | Edit bio, password, email | OK |
-| Settings | /settings | 2FA, sessions, legal, logout | OK (now reachable from Profile) |
-| 2FA / Sessions / Bug / Support / Legal | /settings/* | Full forms | OK |
-| Invite | /invite | Referral link + claim | OK |
-| Custom match | /custom-match | Search, invite, accept, poll | OK |
-| Notifications | /notifications | Per-type deep links | OK |
+### Why app still uses SQLite
+Backend is built on **sqlx + SQLite** (~200 references).  
+Switching live traffic to Postgres needs a full dialect + type migration (`SqlitePool` → `PgPool`, migration SQL, datetime, etc.).
 
-### Fixes in Phase 2
-1. Profile → Settings (⚙️) link was missing — **added**
-2. Splash title Chess King → **Genius Clan**
+**Persistent disk** for SQLite needs a **paid** web instance (free cannot attach disks).
 
-### Intentionally limited (not bugs)
-- Language row disabled (no i18n)
-- Voice mute buttons disabled (no WebRTC UI)
-- Hint engine = first legal move placeholder
+### Current data behaviour
+- `DATABASE_URL=sqlite:///data/genius_clan.db` (ephemeral on free web)
+- Redeploy / sleep → local SQLite resets
+- Postgres is **ready** for Phase 3b (code migration)
 
-### Empty onClick
-None found.
+### Phase 3b (optional follow-up)
+1. sqlx features → `postgres`
+2. Replace pool types across backend
+3. Port `database/migrations/*.sql` to Postgres
+4. Point `DATABASE_URL` to internal Postgres URL
+5. Redeploy API
+
+### Security note
+Rotate DB password in dashboard if this chat is shared; connection strings appeared in deploy tooling.
