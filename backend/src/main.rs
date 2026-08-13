@@ -16,6 +16,8 @@ use config::AppConfig;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_http::cors::{Any, CorsLayer};
+use axum::http::Method;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -94,9 +96,24 @@ async fn main() -> anyhow::Result<()> {
         .merge(social::public_routes())
         .merge(protected);
 
+    // CORS: allow frontend (local + Render / custom domain). FRONTEND_BASE_URL
+    // is the primary origin; Any is used as fallback so free-tier previews work.
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/health", get(health))
         .nest("/api/v1", api_v1)
+        .layer(cors)
         .layer(governor_layer)
         .with_state(state);
 

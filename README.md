@@ -1,6 +1,8 @@
-# Chess King ♟️
+# Genius Clan ♟️
 
-Full-stack multiplayer chess platform.
+Full-stack multiplayer chess platform (project codename: Chess King → brand: **Genius Clan**).
+
+**Phase 1:** Render free tier — `genius-clan` + `genius-clan-api` (see `PHASES.md`, `render.yaml`).
 
 ## Stack
 - **Backend**: Rust (Axum + SQLx + SQLite) — auth, wallet, shop, gifts, matchmaking, anti-cheat, admin
