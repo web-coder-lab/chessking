@@ -1,11 +1,12 @@
 # Genius Clan API — multi-stage build (Render free tier)
-FROM rust:1.83-bookworm AS builder
+FROM rust:latest AS builder
 WORKDIR /app
 
 COPY backend/Cargo.toml backend/Cargo.lock* ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs \
-    && cargo build --release 2>/dev/null || cargo build --release \
-    && rm -rf src
+    && cargo build --release \
+    && rm -rf src \
+    && find target/release -name 'chess-king*' -delete 2>/dev/null || true
 
 COPY backend/src ./src
 RUN touch src/main.rs && cargo build --release
