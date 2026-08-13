@@ -127,6 +127,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/health", get(health))
+        .route("/health/store", get(health_store))
         .nest("/api/v1", api_v1)
         .layer(cors)
         .with_state(state);
@@ -141,4 +142,41 @@ async fn main() -> anyhow::Result<()> {
 
 async fn health() -> &'static str {
     "ok"
+}
+
+/// Durable-store probe: confirms private GitHub repo is reachable.
+async fn health_store(State(state): State<AppState>) -> axum::response::Response {
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
+    match &state.github_store {
+        None => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::Json(serde_json::json!({
+                "ok": false,
+                "store": "github",
+                "error": "GITHUB_DATA_TOKEN not configured"
+            })),
+        )
+            .into_response(),
+        Some(store) => match store.get_index::<serde_json::Value>("users_by_email").await {
+            Ok(_) => (
+                StatusCode::OK,
+                axum::Json(serde_json::json!({
+                    "ok": true,
+                    "store": "github",
+                    "repo": "genius-clan-database"
+                })),
+            )
+                .into_response(),
+            Err(e) => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                axum::Json(serde_json::json!({
+                    "ok": false,
+                    "store": "github",
+                    "error": e.to_string()
+                })),
+            )
+                .into_response(),
+        },
+    }
 }
