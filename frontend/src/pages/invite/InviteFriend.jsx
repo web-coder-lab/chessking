@@ -23,7 +23,7 @@ export default function InviteFriend() {
 
   function handleShare() {
     if (navigator.share && link) {
-      navigator.share({ title: 'Join Chess King', url: link.share_url });
+      navigator.share({ title: 'Join Genius Clan', url: link.share_url });
     }
   }
 

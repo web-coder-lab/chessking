@@ -40,7 +40,7 @@ impl EmailClient {
     pub fn new(smtp_host: &str, smtp_user: &str, smtp_pass: &str, smtp_port: Option<u16>) -> Self {
         if smtp_host.is_empty() || smtp_user.is_empty() || smtp_pass.is_empty() {
             tracing::warn!("SMTP not configured (SMTP_HOST/SMTP_USER/SMTP_PASS empty) — emails will be logged, not actually sent. Set real credentials to send email.");
-            return Self { transport: None, from: "noreply@chessking.app".to_string() };
+            return Self { transport: None, from: "noreply@genius-clan.app".to_string() };
         }
 
         let creds = Credentials::new(smtp_user.to_string(), smtp_pass.to_string());
@@ -65,7 +65,7 @@ impl EmailClient {
     }
 
     /// §2.3 step 8 / §2.5: verification email. `deep_link_base` is the
-    /// frontend origin, e.g. https://app.chessking.pk — token is appended
+    /// frontend origin, e.g. https://genius-clan.onrender.com — token is appended
     /// as a query param and consumed by the Verify Email screen.
     pub async fn send_verification_email(&self, to: &str, token: &str, deep_link_base: &str) -> Result<(), AuthError> {
         let link = format!("{deep_link_base}/verify-email?token={token}");
@@ -75,7 +75,7 @@ impl EmailClient {
             "One tap and your account is active. This link works for the next 15 minutes.",
             Some(("Verify Email", &link)),
         );
-        self.send(to, "Verify your Chess King account", html).await
+        self.send(to, "Verify your Genius Clan account", html).await
     }
 
     /// Sent right after verify-email succeeds — nothing sent this before
@@ -87,7 +87,7 @@ impl EmailClient {
             "Your account is verified and your starting coins are already in your wallet. Find an opponent whenever you're ready.",
             Some(("Start Playing", &format!("{deep_link_base}/dashboard"))),
         );
-        self.send(to, "Welcome to Chess King", html).await
+        self.send(to, "Welcome to Genius Clan", html).await
     }
 
     /// §6 step 3: password reset email, 15-minute link.
@@ -99,7 +99,7 @@ impl EmailClient {
             "This link expires in 15 minutes. If you didn't request this, you can safely ignore this email &mdash; your password won't change.",
             Some(("Reset Password", &link)),
         );
-        self.send(to, "Reset your Chess King password", html).await
+        self.send(to, "Reset your Genius Clan password", html).await
     }
 
     /// Doc 2 §5 case: sign-in from a device/session the account hasn't
@@ -115,7 +115,7 @@ impl EmailClient {
             &body,
             Some(("Review Active Sessions", &format!("{deep_link_base}/settings/sessions"))),
         );
-        self.send(to, "New sign-in to your Chess King account", html).await
+        self.send(to, "New sign-in to your Genius Clan account", html).await
     }
 
     /// Doc 2 §8: confirms a 2FA state change either direction - the "on"
@@ -154,7 +154,7 @@ impl EmailClient {
             &body,
             Some(("View Wallet", &format!("{deep_link_base}/wallet"))),
         );
-        self.send(to, "Chess King payment confirmed", html).await
+        self.send(to, "Genius Clan payment confirmed", html).await
     }
 
     /// Doc 9 §6: "'Send test email' button to verify config works before
@@ -164,10 +164,10 @@ impl EmailClient {
         let html = shell(
             GOLD, "&#9989;",
             "Test email received",
-            "If you're reading this, your Chess King SMTP configuration is working correctly.",
+            "If you're reading this, your Genius Clan SMTP configuration is working correctly.",
             None,
         );
-        self.send(to, "Chess King — SMTP test", html).await
+        self.send(to, "Genius Clan — SMTP test", html).await
     }
 
     async fn send(&self, to: &str, subject: &str, html: String) -> Result<(), AuthError> {
@@ -179,9 +179,9 @@ impl EmailClient {
         // A display name on From: (not just a bare address) and a
         // matching Reply-To are both small, well-documented signals
         // spam filters weigh — a bare "user@gmail.com" From with no
-        // name looks more like bulk/auto mail than "Chess King
+        // name looks more like bulk/auto mail than "Genius Clan
         // <user@gmail.com>" does.
-        let from_header = format!("Chess King <{}>", self.from);
+        let from_header = format!("Genius Clan <{}>", self.from);
         let email = match Message::builder()
             .from(from_header.parse().map_err(|e| { tracing::error!("invalid From address {}: {e:?}", self.from); AuthError::Internal })?)
             .reply_to(self.from.parse().map_err(|e| { tracing::error!("invalid Reply-To address {}: {e:?}", self.from); AuthError::Internal })?)
@@ -222,7 +222,7 @@ const DANGER_RED: &str = "#E74C3C";
 /// gold). Table-based layout with inline styles throughout since email
 /// clients don't reliably support <style> blocks or modern CSS. The
 /// crowned-king glyph in the header is the one signature element that
-/// repeats across every email type, so any Chess King email is
+/// repeats across every email type, so any Genius Clan email is
 /// recognizable at a glance regardless of which one it is.
 fn shell(accent: &str, icon: &str, headline: &str, body_html: &str, cta: Option<(&str, &str)>) -> String {
     let cta_html = match cta {
@@ -237,20 +237,20 @@ fn shell(accent: &str, icon: &str, headline: &str, body_html: &str, cta: Option<
 
     format!(
         "<!DOCTYPE html>\
-<html><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/><title>Chess King</title></head>\
+<html><head><meta charset=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/><title>Genius Clan</title></head>\
 <body style=\"margin:0; padding:0; background:#0F1115;\">\
 <table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#0F1115; padding: 40px 16px;\">\
 <tr><td align=\"center\">\
 <table role=\"presentation\" width=\"480\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:480px; width:100%; background:#1A1D23; border-radius:12px; border-top:3px solid {accent};\">\
   <tr><td align=\"center\" style=\"padding: 28px 40px 8px;\">\
-    <span style=\"font-family: Georgia, 'Times New Roman', serif; letter-spacing: 3px; font-size:13px; color:#D4AF37; text-transform:uppercase;\">&#9812; Chess King</span>\
+    <span style=\"font-family: Georgia, 'Times New Roman', serif; letter-spacing: 3px; font-size:13px; color:#D4AF37; text-transform:uppercase;\">&#9812; Genius Clan</span>\
   </td></tr>\
   <tr><td align=\"center\" style=\"padding: 14px 40px 0; font-size: 40px; line-height:1;\">{icon}</td></tr>\
   <tr><td align=\"center\" style=\"padding: 18px 40px 0; font-family: Georgia, 'Times New Roman', serif; font-size:22px; color:#F5F5F5; font-weight:bold;\">{headline}</td></tr>\
   <tr><td align=\"center\" style=\"padding: 12px 40px 24px; font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.6; color:#9CA3AF;\">{body_html}</td></tr>\
   {cta_html}\
   <tr><td style=\"padding: 26px 40px 28px; border-top:1px solid #2A2E37; margin-top: 20px; font-family: Arial, Helvetica, sans-serif; font-size:12px; color:#9CA3AF; text-align:center;\">\
-    Chess King &middot; Need help? Reach us through Support in the app.<br/>If you didn't expect this email, you can safely ignore it.\
+    Genius Clan &middot; Need help? Reach us through Support in the app.<br/>If you didn't expect this email, you can safely ignore it.\
   </td></tr>\
 </table>\
 </td></tr>\

@@ -31,13 +31,13 @@ const LOCKOUT_WINDOW_MINUTES: i64 = 15;
 /// §3.2 steps 1-6, exactly in order. Never reveals whether the identifier
 /// matched an account — same generic error for "not found" and "wrong
 /// password" per §3.3.
-pub async fn login_step_1_verify_credentials(pool: &SqlitePool, req: &LoginRequest) -> Result<UserAuthRow, AuthError> {
+pub async fn login_step_1_verify_credentials(pool: &SqlitePool, req: &LoginRequest, gh: Option<&crate::db::GitHubStore>) -> Result<UserAuthRow, AuthError> {
     check_lockout(pool, &req.identifier).await?;
 
     let identifier_lower = req.identifier.to_lowercase();
 
-    // Step 1: look up by username_lower OR email
-    let user = sqlx::query_as::<_, UserAuthRow>(
+    // Step 1: look up by username_lower OR email (ephemeral SQL first)
+    let mut user = sqlx::query_as::<_, UserAuthRow>(
         "SELECT id, password_hash, email_verified, two_fa_enabled, role, status
          FROM users WHERE username_lower = ? OR email = ?"
     )
@@ -45,6 +45,44 @@ pub async fn login_step_1_verify_credentials(pool: &SqlitePool, req: &LoginReque
     .bind(&identifier_lower)
     .fetch_optional(pool)
     .await?;
+
+    // Durable fallback: private GitHub user store
+    if user.is_none() {
+        if let Some(store) = gh {
+            if let Some(uid) = super::github_users::find_user_id_by_identifier(store, &identifier_lower).await? {
+                if let Some(gu) = super::github_users::get_user(store, &uid).await? {
+                    // Hydrate ephemeral SQL so rest of session/2FA code keeps working this process
+                    let _ = sqlx::query(
+                        "INSERT OR IGNORE INTO users (id, username, username_lower, email, password_hash, email_verified, rating, coin_balance, two_fa_enabled, role, status, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    )
+                    .bind(&gu.id)
+                    .bind(&gu.username)
+                    .bind(&gu.username_lower)
+                    .bind(&gu.email)
+                    .bind(&gu.password_hash)
+                    .bind(if gu.email_verified { 1 } else { 0 })
+                    .bind(gu.rating)
+                    .bind(gu.coin_balance)
+                    .bind(if gu.two_fa_enabled { 1 } else { 0 })
+                    .bind(&gu.role)
+                    .bind(&gu.status)
+                    .bind(&gu.created_at)
+                    .bind(&gu.updated_at)
+                    .execute(pool)
+                    .await;
+                    user = Some(UserAuthRow {
+                        id: gu.id,
+                        password_hash: gu.password_hash,
+                        email_verified: if gu.email_verified { 1 } else { 0 },
+                        two_fa_enabled: if gu.two_fa_enabled { 1 } else { 0 },
+                        role: gu.role,
+                        status: gu.status,
+                    });
+                }
+            }
+        }
+    }
 
     // Step 2: not found → generic error
     let Some(user) = user else {

@@ -7,6 +7,7 @@ pub mod register;
 pub mod login;
 pub mod two_fa;
 pub mod forgot_password;
+pub mod github_users;
 
 use axum::{
     extract::{Path, State},
@@ -97,7 +98,8 @@ async fn notify_if_new_device(state: &AppState, user_id: &str, fingerprint: &str
 // POST /auth/register  (Doc 9 Sec1: response { status: "verify_email_sent" })
 // ---------------------------------------------------------
 async fn register_handler(State(state): State<AppState>, Json(req): Json<register::RegisterRequest>) -> Result<Json<serde_json::Value>, AuthError> {
-    register::register(&state.db, req, &state.email, &state.config.frontend_base_url).await?;
+    let store = state.github_store.as_deref();
+    register::register(&state.db, req, &state.email, &state.config.frontend_base_url, store).await?;
     Ok(Json(json!({ "status": "verify_email_sent" })))
 }
 
@@ -172,7 +174,8 @@ struct LoginResponse {
 }
 
 async fn login_handler(State(state): State<AppState>, Json(req): Json<login::LoginRequest>) -> Result<Json<LoginResponse>, AuthError> {
-    let user = login::login_step_1_verify_credentials(&state.db, &req).await?;
+    let store = state.github_store.as_deref();
+    let user = login::login_step_1_verify_credentials(&state.db, &req, store).await?;
 
     if user.two_fa_enabled == 0 {
         let tokens = issue_tokens_for_new_session(&state, &user.id, &user.role, req.device_fingerprint.as_deref(), req.ip_address.as_deref(), req.browser.as_deref(), req.os.as_deref()).await?;

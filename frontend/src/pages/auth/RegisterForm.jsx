@@ -26,7 +26,7 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       const resp = await authApi.register(username, email, password);
-      if (resp.state === 'verify_email') {
+      if (resp.status === 'verify_email' || resp.status === 'verify_email_sent') {
         setVerifyState(true);
       }
     } catch (err) {

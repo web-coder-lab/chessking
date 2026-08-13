@@ -34,7 +34,7 @@ const VERIFICATION_TOKEN_TTL_MINUTES: i64 = 15;
 /// 9. generate email_verification_tokens row (15 min expiry)
 /// 10. send verification email
 /// 11. return "verify your email" state — NOT logged in
-pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::email::EmailClient, frontend_base_url: &str) -> Result<RegisterResponse, AuthError> {
+pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::email::EmailClient, frontend_base_url: &str, gh: Option<&crate::db::GitHubStore>) -> Result<RegisterResponse, AuthError> {
     // Steps 1-2: format validation (client + server; this IS the server half)
     validate_username(&req.username)?;
     validate_email(&req.email)?;
@@ -66,6 +66,13 @@ pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::em
         return Err(AuthError::EmailTaken);
     }
 
+    // Durable GitHub indexes (survive Render restart)
+    if let Some(store) = gh {
+        let (u_taken, e_taken) = super::github_users::username_or_email_taken(store, &username_lower, &email_lower).await?;
+        if u_taken { return Err(AuthError::UsernameTaken); }
+        if e_taken { return Err(AuthError::EmailTaken); }
+    }
+
     // Step 5: hash password (Argon2id)
     let password_hash = hash_password(&req.password)?;
 
@@ -95,6 +102,24 @@ pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::em
     crate::shop::inventory::grant_default_items(&mut tx, &user_id).await?;
 
     tx.commit().await?;
+
+    // Persist user to private GitHub DB (source of truth across deploys)
+    if let Some(store) = gh {
+        let mut gu = super::github_users::new_user(
+            user_id.clone(),
+            req.username.clone(),
+            email_lower.clone(),
+            password_hash.clone(),
+        );
+        // Free tier often has no SMTP — mark verified so login works without email click
+        gu.email_verified = true;
+        super::github_users::save_user(store, &gu).await?;
+        // Mirror verified flag into ephemeral SQL so same process can log in immediately
+        let _ = sqlx::query("UPDATE users SET email_verified = 1 WHERE id = ?")
+            .bind(&user_id)
+            .execute(pool)
+            .await;
+    }
 
     // Doc 8 §9/§1.2: multi_account_same_device check - this was fully
     // implemented in anticheat::device_fingerprint but never actually
