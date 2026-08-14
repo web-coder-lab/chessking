@@ -61,6 +61,10 @@ async fn purchase_handler(
 ) -> Result<Json<PurchaseResponse>, ShopError> {
     let shop_item_id = req.shop_item_id.clone();
     let new_balance = purchase::purchase_item(&state.db, &claims.sub, req).await?;
+    if let Some(store) = state.github_store.as_deref() {
+        let _ = github_inventory::sync_from_sql(store, &state.db, &claims.sub).await;
+        let _ = crate::auth::github_wallet::sync_balance(store, &claims.sub, new_balance).await;
+    }
 
     let inventory_item = sqlx::query_as::<_, inventory::InventoryItemRow>(
         "SELECT i.id AS inventory_id, i.shop_item_id, s.category, s.name, s.image_url, i.is_equipped, i.acquired_via
@@ -87,6 +91,9 @@ async fn list_inventory_handler(
     Extension(claims): Extension<AccessClaims>,
     Query(q): Query<ShopQuery>,
 ) -> Result<Json<InventoryResponse>, ShopError> {
+    if let Some(store) = state.github_store.as_deref() {
+        let _ = github_inventory::hydrate_sql_if_empty(store, &state.db, &claims.sub).await;
+    }
     let all = inventory::list_inventory(&state.db, &claims.sub).await?;
     let items = match q.category {
         Some(cat) => all.into_iter().filter(|i| i.category == cat).collect(),
