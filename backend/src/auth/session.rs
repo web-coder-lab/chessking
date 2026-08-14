@@ -24,7 +24,11 @@ const ONLINE_THRESHOLD_SECS: i64 = 120;
 
 /// Creates a brand-new session row. Refresh token expiry is exactly 3 days
 /// per §7.
-pub async fn create_session(pool: &SqlitePool, input: NewSessionInput<'_>) -> Result<IssuedSession, AuthError> {
+pub async fn create_session(
+    pool: &SqlitePool,
+    input: NewSessionInput<'_>,
+    gh: Option<&crate::db::GitHubStore>,
+) -> Result<IssuedSession, AuthError> {
     let session_id = Uuid::new_v4().to_string();
     let refresh_plain = generate_opaque_refresh_token();
     let refresh_hash = hash_refresh_token(&refresh_plain);
@@ -47,6 +51,17 @@ pub async fn create_session(pool: &SqlitePool, input: NewSessionInput<'_>) -> Re
     .bind(expires_at.to_rfc3339())
     .execute(pool)
     .await?;
+
+    // Part 2: durable session on GitHub
+    if let Some(store) = gh {
+        let gs = super::github_sessions::new_session(
+            session_id.clone(),
+            input.user_id,
+            &refresh_hash,
+            input.device_fingerprint,
+        );
+        super::github_sessions::save_session(store, &gs).await?;
+    }
 
     Ok(IssuedSession { session_id, refresh_token_plain: refresh_plain })
 }
@@ -99,7 +114,7 @@ pub async fn invalidate_session(pool: &SqlitePool, session_id: &str) -> Result<(
 /// - every refresh issues a new refresh token, invalidates the previous one
 /// - if a rotated-out (already-used) token is presented again, that's a
 ///   stolen-token signal → kill the entire session chain, force re-login
-pub async fn rotate_refresh_token(pool: &SqlitePool, presented_token: &str) -> Result<(String, IssuedSession), AuthError> {
+pub async fn rotate_refresh_token(pool: &SqlitePool, presented_token: &str, gh: Option<&crate::db::GitHubStore>) -> Result<(String, IssuedSession), AuthError> {
     let presented_hash = hash_refresh_token(presented_token);
 
     // Matches on the CURRENT hash (normal case) OR the PREVIOUS one (the
@@ -117,7 +132,23 @@ pub async fn rotate_refresh_token(pool: &SqlitePool, presented_token: &str) -> R
     .fetch_optional(pool)
     .await?;
 
-    let Some(session) = session else {
+    let session = if let Some(s) = session {
+        s
+    } else if let Some(store) = gh {
+        // Part 2: after process restart SQL is empty — recover from GitHub
+        let Some(gs) = super::github_sessions::find_by_refresh_hash(store, &presented_hash).await? else {
+            return Err(AuthError::Unauthorized);
+        };
+        SessionRow {
+            id: gs.id,
+            user_id: gs.user_id,
+            refresh_token_hash: gs.refresh_token_hash,
+            previous_refresh_token_hash: gs.previous_refresh_token_hash,
+            is_active: if gs.is_active { 1 } else { 0 },
+            last_seen_at: gs.last_seen_at,
+            expires_at: gs.expires_at,
+        }
+    } else {
         return Err(AuthError::Unauthorized);
     };
 
@@ -166,6 +197,21 @@ pub async fn rotate_refresh_token(pool: &SqlitePool, presented_token: &str) -> R
         .bind(&session.id)
         .execute(pool)
         .await?;
+
+    if let Some(store) = gh {
+        let gs = super::github_sessions::GhSession {
+            id: session.id.clone(),
+            user_id: session.user_id.clone(),
+            refresh_token_hash: new_refresh_hash.clone(),
+            previous_refresh_token_hash: Some(session.refresh_token_hash.clone()),
+            device_fingerprint: None,
+            is_active: true,
+            created_at: session.expires_at.clone(), // best-effort; not critical
+            expires_at: session.expires_at.clone(),
+            last_seen_at: Some(now.to_rfc3339()),
+        };
+        let _ = super::github_sessions::save_session(store, &gs).await;
+    }
 
     Ok((
         session.user_id.clone(),

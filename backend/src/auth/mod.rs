@@ -8,6 +8,7 @@ pub mod login;
 pub mod two_fa;
 pub mod forgot_password;
 pub mod github_users;
+pub mod github_sessions;
 
 use axum::{
     extract::{Path, State},
@@ -61,7 +62,7 @@ async fn issue_tokens_for_new_session(state: &AppState, user_id: &str, role: &st
         ip_address: ip,
         browser,
         os,
-    }).await?;
+    }, state.github_store.as_deref()).await?;
     let access = issue_access_token(user_id, role, &issued.session_id, &state.config.jwt_secret)?;
     Ok(TokenPair { access_token: access, refresh_token: issued.refresh_token_plain })
 }
@@ -299,10 +300,21 @@ async fn device_approval_status_handler(State(state): State<AppState>, Path(pend
 struct RefreshRequest { refresh_token: String }
 
 async fn refresh_handler(State(state): State<AppState>, Json(req): Json<RefreshRequest>) -> Result<Json<TokenPair>, AuthError> {
-    let (user_id, issued) = rotate_refresh_token(&state.db, &req.refresh_token).await?;
-    let role: (String,) = sqlx::query_as("SELECT role FROM users WHERE id = ?")
-        .bind(&user_id).fetch_one(&state.db).await.map_err(AuthError::from)?;
-    let access = issue_access_token(&user_id, &role.0, &issued.session_id, &state.config.jwt_secret)?;
+    let (user_id, issued) = rotate_refresh_token(&state.db, &req.refresh_token, state.github_store.as_deref()).await?;
+    let role = match sqlx::query_as::<_, (String,)>("SELECT role FROM users WHERE id = ?")
+        .bind(&user_id).fetch_optional(&state.db).await.map_err(AuthError::from)? {
+        Some((r,)) => r,
+        None => {
+            if let Some(store) = state.github_store.as_deref() {
+                github_users::get_user(store, &user_id).await?
+                    .map(|u| u.role)
+                    .unwrap_or_else(|| "user".into())
+            } else {
+                "user".into()
+            }
+        }
+    };
+    let access = issue_access_token(&user_id, &role, &issued.session_id, &state.config.jwt_secret)?;
     Ok(Json(TokenPair { access_token: access, refresh_token: issued.refresh_token_plain }))
 }
 
