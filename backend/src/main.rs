@@ -11,7 +11,7 @@ mod admin;
 mod social;
 
 use axum::{extract::State, routing::get, Router};
-use axum::middleware::from_fn_with_state;
+use axum::middleware::{from_fn, from_fn_with_state};
 use config::AppConfig;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -171,6 +171,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         .route("/health/store", get(health_store))
         .nest("/api/v1", api_v1)
+        .layer(from_fn(middleware::probe_guard::block_probes))
         .layer(cors)
         .layer(security_headers.0)
         .layer(security_headers.1)
