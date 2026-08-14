@@ -6,6 +6,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
 import { shopApi } from '../../services/api';
+import ItemVisual from '../../components/shop/ItemVisual';
 import './Shop.css';
 
 const CATEGORIES = [
@@ -68,7 +69,7 @@ export default function Shop({ user }) {
           {items.map((item) => (
             <Card key={item.id} className="ck-shop__item-card" onClick={() => setPreviewItem(item)}>
               {item.owned && <span className="ck-shop__owned-ribbon">Owned</span>}
-              <img src={item.image_url} alt="" className="ck-shop__item-image" />
+              <ItemVisual item={item} className="ck-shop__item-image" />
               <span className="ck-shop__item-name">{item.name}</span>
               <span className="ck-shop__item-price tabular-nums">🪙 {item.price_coins}</span>
               {!item.owned && (
@@ -88,7 +89,7 @@ export default function Shop({ user }) {
       {previewItem && (
         <div className="ck-shop__modal-overlay" onClick={() => setPreviewItem(null)}>
           <div className="ck-shop__modal" onClick={(e) => e.stopPropagation()}>
-            <img src={previewItem.image_url} alt="" className="ck-shop__modal-image" />
+            <ItemVisual item={previewItem} className="ck-shop__modal-image" />
             <h2 className="section-heading">{previewItem.name}</h2>
             <p className="text-secondary">{previewItem.description}</p>
             <p className="ck-shop__modal-price tabular-nums">🪙 {previewItem.price_coins}</p>

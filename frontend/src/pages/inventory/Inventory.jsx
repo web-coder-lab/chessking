@@ -6,6 +6,7 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import EmptyState from '../../components/common/EmptyState';
 import { inventoryApi } from '../../services/api';
+import ItemVisual from '../../components/shop/ItemVisual';
 import './Inventory.css';
 
 const CATEGORIES = [
@@ -73,7 +74,7 @@ export default function Inventory({ user }) {
                 onClick={() => setSheetItem(item)}
               >
                 {item.is_equipped === 1 && <span className="ck-inventory__equipped-label">Equipped</span>}
-                <img src={item.image_url} alt="" className="ck-shop__item-image" />
+                <ItemVisual item={item} className="ck-shop__item-image" />
                 <span className="ck-shop__item-name">{item.name}</span>
               </Card>
             ))}
@@ -91,7 +92,7 @@ export default function Inventory({ user }) {
       {sheetItem && (
         <div className="ck-inventory__sheet-overlay" onClick={() => setSheetItem(null)}>
           <div className="ck-inventory__sheet" onClick={(e) => e.stopPropagation()}>
-            <img src={sheetItem.image_url} alt="" className="ck-inventory__sheet-image" />
+            <ItemVisual item={sheetItem} className="ck-inventory__sheet-image" />
             <h2 className="section-heading">{sheetItem.name}</h2>
             {sheetItem.is_equipped ? (
               <Button disabled pill>Currently Equipped</Button>

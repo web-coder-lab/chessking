@@ -3,12 +3,36 @@ import { authApi, socialApi, setCurrentAccessToken } from '../services/api';
 
 const AuthContext = createContext(null);
 
+function ck_setCookie(name, value, days = 30) {
+  try {
+    const maxAge = days * 24 * 60 * 60;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  } catch (_) {}
+}
+function ck_getCookie(name) {
+  try {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch (_) {
+    return null;
+  }
+}
+function ck_clearCookie(name) {
+  try {
+    document.cookie = `${name}=; path=/; max-age=0`;
+  } catch (_) {}
+}
+function loadRefreshToken() {
+  return localStorage.getItem('ck_refresh_token') || ck_getCookie('ck_refresh_token');
+}
+
+
 const ACCESS_TOKEN_TTL_MS = 5 * 60 * 1000;
 const REFRESH_MARGIN_MS = 30 * 1000; // refresh 30s before expiry
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
-  const [refreshToken, setRefreshToken] = useState(() => localStorage.getItem('ck_refresh_token'));
+  const [refreshToken, setRefreshToken] = useState(() => loadRefreshToken());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const refreshTimer = useRef(null);
@@ -32,6 +56,7 @@ export function AuthProvider({ children }) {
     setCurrentAccessToken(tokens.access_token);
     setRefreshToken(tokens.refresh_token);
     localStorage.setItem('ck_refresh_token', tokens.refresh_token);
+    ck_setCookie('ck_refresh_token', tokens.refresh_token, 30);
     setIsAuthenticated(true);
     scheduleRefresh(tokens.refresh_token);
     refreshUser();
@@ -42,6 +67,7 @@ export function AuthProvider({ children }) {
     setCurrentAccessToken(null);
     setRefreshToken(null);
     localStorage.removeItem('ck_refresh_token');
+    ck_clearCookie('ck_refresh_token');
     setIsAuthenticated(false);
     setUser(null);
     if (refreshTimer.current) clearTimeout(refreshTimer.current);

@@ -35,6 +35,6 @@ pub async fn get_support_info(pool: &SqlitePool) -> Result<SupportInfoResponse, 
         email: row
             .and_then(|(c,)| c)
             .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "support@genius-clan.app".into()),
+            .unwrap_or_else(|| "workn8312@gmail.com".into()),
     })
 }
