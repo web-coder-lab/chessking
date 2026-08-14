@@ -1,4 +1,9 @@
-const API_BASE = (import.meta.env?.VITE_API_BASE || 'http://localhost:8080') + '/api/v1';
+const API_BASE = (
+  import.meta.env?.VITE_API_BASE
+  || (typeof window !== 'undefined' && window.location?.hostname?.includes('onrender.com')
+        ? 'https://genius-clan-api.onrender.com'
+        : 'http://localhost:8080')
+) + '/api/v1';
 
 // Simple in-memory holder so AuthContext can push the current access
 // token here without every caller having to thread it through props.

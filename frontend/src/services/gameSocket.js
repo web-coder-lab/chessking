@@ -1,4 +1,9 @@
-const WS_BASE = (import.meta.env?.VITE_WS_BASE || 'ws://localhost:8080') + '/api/v1';
+const WS_BASE = (
+  import.meta.env?.VITE_WS_BASE
+  || (typeof window !== 'undefined' && window.location?.hostname?.includes('onrender.com')
+        ? 'wss://genius-clan-api.onrender.com'
+        : 'ws://localhost:8080')
+) + '/api/v1';
 
 /**
  * Thin wrapper around the backend's match WebSocket (game/websocket.rs).
