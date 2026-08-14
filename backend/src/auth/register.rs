@@ -136,6 +136,8 @@ pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::em
             .bind(&user_id)
             .execute(pool)
             .await;
+        // Part 4: durable default inventory
+        let _ = crate::shop::github_inventory::sync_from_sql(store, pool, &user_id).await;
     }
 
     // Doc 8 §9/§1.2: multi_account_same_device check - this was fully

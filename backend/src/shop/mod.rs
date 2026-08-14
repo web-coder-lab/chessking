@@ -2,6 +2,7 @@ pub mod errors;
 pub mod list;
 pub mod purchase;
 pub mod inventory;
+pub mod github_inventory;
 pub mod gifts;
 
 use axum::{
@@ -103,6 +104,9 @@ async fn equip_handler(
     Path(inventory_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, ShopError> {
     inventory::equip_item(&state.db, &claims.sub, &inventory_id).await?;
+    if let Some(store) = state.github_store.as_deref() {
+        let _ = github_inventory::sync_from_sql(store, &state.db, &claims.sub).await;
+    }
     Ok(Json(serde_json::json!({ "status": "equipped" })))
 }
 
@@ -115,6 +119,9 @@ async fn unequip_handler(
     Path(inventory_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, ShopError> {
     inventory::unequip_item(&state.db, &claims.sub, &inventory_id).await?;
+    if let Some(store) = state.github_store.as_deref() {
+        let _ = github_inventory::sync_from_sql(store, &state.db, &claims.sub).await;
+    }
     Ok(Json(serde_json::json!({ "status": "unequipped" })))
 }
 
