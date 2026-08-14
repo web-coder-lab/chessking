@@ -67,6 +67,9 @@ async fn main() -> anyhow::Result<()> {
     // Doc 8 §12: periodic wallet_logs hash-chain tamper check.
     anticheat::hash_integrity::spawn_periodic_integrity_check(pool.clone());
 
+    // Phase 6: periodic security event summary in logs
+    anticheat::monitor::spawn_periodic_security_summary(pool.clone());
+
     // Doc 8 §11: "Standard rate limiting per endpoint, per user, per IP."
     // Applied globally here as the infrastructure-level backstop; a
     // tighter per-endpoint limit (e.g. login/register specifically) can

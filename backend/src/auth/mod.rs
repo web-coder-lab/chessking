@@ -191,6 +191,7 @@ async fn login_handler(State(state): State<AppState>, Json(req): Json<login::Log
             let challenge = crate::anticheat::captcha::generate_challenge(&state.db)
                 .await
                 .map_err(|_| AuthError::Internal)?;
+            crate::anticheat::monitor::log_captcha_required(&identifier_lower);
             return Ok(Json(LoginResponse {
                 requires_2fa: false,
                 requires_device_approval: false,
@@ -211,6 +212,7 @@ async fn login_handler(State(state): State<AppState>, Json(req): Json<login::Log
         .await
         .map_err(|_| AuthError::Internal)?;
         if !ok {
+            crate::anticheat::monitor::log_captcha_failed();
             return Err(AuthError::CaptchaRequired);
         }
     }

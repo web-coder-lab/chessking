@@ -167,6 +167,7 @@ async fn check_lockout(pool: &SqlitePool, identifier_lower: &str) -> Result<(), 
         // Increasing backoff on repeated lockouts is computed from how far
         // past the threshold the account is; simplest correct model: the
         // full window must elapse since the most recent failure.
+        crate::anticheat::monitor::log_lockout(identifier_lower);
         return Err(AuthError::AccountLocked { retry_after_secs: LOCKOUT_WINDOW_MINUTES * 60 });
     }
     Ok(())

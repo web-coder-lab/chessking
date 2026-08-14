@@ -7,6 +7,7 @@ pub mod hash_integrity;
 pub mod device_fingerprint;
 pub mod match_integrity;
 pub mod ip_reputation;
+pub mod monitor;
 
 use axum::{
     extract::State,

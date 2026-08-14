@@ -37,7 +37,7 @@ pub async fn block_probes(req: Request<Body>, next: Next) -> Response {
 
     for needle in BLOCKED_SUBSTRINGS {
         if path.contains(needle) || raw.contains(needle) {
-            tracing::warn!(path = %path, "blocked probe path");
+            crate::anticheat::monitor::log_probe_blocked(&path);
             return (StatusCode::NOT_FOUND, "not found").into_response();
         }
     }
