@@ -9,6 +9,7 @@ pub mod two_fa;
 pub mod forgot_password;
 pub mod github_users;
 pub mod github_sessions;
+pub mod github_wallet;
 
 use axum::{
     extract::{Path, State},

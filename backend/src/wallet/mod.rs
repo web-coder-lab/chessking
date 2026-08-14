@@ -30,11 +30,24 @@ use webhook::handle_webhook;
 struct BalanceResponse { coin_balance: i64 }
 
 async fn balance_handler(State(state): State<AppState>, Extension(claims): Extension<AccessClaims>) -> Result<Json<BalanceResponse>, WalletError> {
-    let row: (i64,) = sqlx::query_as("SELECT coin_balance FROM users WHERE id = ?")
+    let row: Option<(i64,)> = sqlx::query_as("SELECT coin_balance FROM users WHERE id = ?")
         .bind(&claims.sub)
-        .fetch_one(&state.db)
+        .fetch_optional(&state.db)
         .await?;
-    Ok(Json(BalanceResponse { coin_balance: row.0 }))
+    let mut bal = row.map(|r| r.0).unwrap_or(0);
+    if let Some(store) = state.github_store.as_deref() {
+        if let Ok(Some(gu)) = crate::auth::github_users::get_user(store, &claims.sub).await {
+            if gu.coin_balance != bal {
+                bal = gu.coin_balance;
+                let _ = sqlx::query("UPDATE users SET coin_balance = ? WHERE id = ?")
+                    .bind(bal)
+                    .bind(&claims.sub)
+                    .execute(&state.db)
+                    .await;
+            }
+        }
+    }
+    Ok(Json(BalanceResponse { coin_balance: bal }))
 }
 
 // ---------------------------------------------------------

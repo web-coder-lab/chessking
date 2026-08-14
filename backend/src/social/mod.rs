@@ -66,11 +66,11 @@ async fn claim_referral_handler(State(state): State<AppState>, Extension(claims)
 }
 
 async fn daily_status_handler(State(state): State<AppState>, Extension(claims): Extension<AccessClaims>) -> Result<Json<rewards::DailyStatusResponse>, SocialError> {
-    Ok(Json(rewards::daily_status(&state.db, &claims.sub).await?))
+    Ok(Json(rewards::daily_status(&state.db, &claims.sub, state.github_store.as_deref()).await?))
 }
 
 async fn daily_claim_handler(State(state): State<AppState>, Extension(claims): Extension<AccessClaims>) -> Result<Json<rewards::DailyClaimResponse>, SocialError> {
-    Ok(Json(rewards::claim_daily(&state.db, &claims.sub).await?))
+    Ok(Json(rewards::claim_daily(&state.db, &claims.sub, state.github_store.as_deref()).await?))
 }
 
 async fn ads_status_handler(State(state): State<AppState>, Extension(claims): Extension<AccessClaims>) -> Result<Json<rewards::AdsStatusResponse>, SocialError> {
