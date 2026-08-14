@@ -18,6 +18,8 @@ pub struct AppConfig {
     pub easypaisa_api_key: Option<String>,
     pub googlepay_api_key: Option<String>,
     pub port: u16,
+    /// Comma-separated IPs or CIDRs. Empty = public API. Non-empty = only these IPs can call API.
+    pub ip_allowlist: Vec<String>,
 }
 
 impl AppConfig {
@@ -49,6 +51,12 @@ impl AppConfig {
             port: env::var("PORT")
                 .unwrap_or_else(|_| "8080".to_string())
                 .parse()?,
+            ip_allowlist: env::var("IP_ALLOWLIST")
+                .unwrap_or_default()
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
         })
     }
 }

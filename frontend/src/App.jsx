@@ -23,6 +23,7 @@ import { supportApi } from './services/api';
 import InviteFriend from './pages/invite/InviteFriend';
 import CustomMatch from './pages/custom-match/CustomMatch';
 import NotificationsDrawer from './components/notifications/NotificationsDrawer';
+import NotFound from './pages/not-found/NotFound';
 import './styles/tokens.css';
 
 /**
@@ -72,7 +73,7 @@ function AppRoutes() {
       <Route path="/custom-match" element={<ProtectedRoute><CustomMatch user={user} /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
-      <Route path="*" element={<Navigate to="/auth" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

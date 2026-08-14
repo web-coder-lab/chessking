@@ -43,6 +43,12 @@ async fn main() -> anyhow::Result<()> {
     if github_store.is_none() {
         tracing::warn!("GITHUB_DATA_TOKEN not set — durable GitHub store offline");
     }
+    if !config.ip_allowlist.is_empty() {
+        tracing::warn!(
+            count = config.ip_allowlist.len(),
+            "IP_ALLOWLIST active — API locked to listed IPs only (frontend stays public)"
+        );
+    }
 
     let state = AppState {
         db: pool.clone(),
@@ -189,6 +195,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/health/store", get(health_store))
         .nest("/api/v1", api_v1)
         .layer(from_fn(middleware::probe_guard::block_probes))
+        .layer(from_fn_with_state(state.clone(), middleware::ip_allowlist::enforce_ip_allowlist))
         .layer(cors)
         .layer(security_headers.0)
         .layer(security_headers.1)
