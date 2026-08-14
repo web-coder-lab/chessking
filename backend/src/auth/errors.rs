@@ -43,6 +43,8 @@ pub enum AuthError {
     AlreadyVerified,
     ResendLimitExceeded,              // "Contact support" state, beyond 4th resend
 
+    /// Phase 5: registration / sensitive action velocity exceeded
+    RateLimited,
     Internal,
 }
 
@@ -77,6 +79,7 @@ impl IntoResponse for AuthError {
             AuthError::AlreadyVerified => (StatusCode::BAD_REQUEST, "already_verified", "This email is already verified.".to_string()),
             AuthError::ResendLimitExceeded => (StatusCode::TOO_MANY_REQUESTS, "resend_limit", "Please contact support to verify your email.".to_string()),
 
+            AuthError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "rate_limited", "Too many attempts. Please wait and try again.".to_string()),
             AuthError::Internal => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", "Something went wrong. Please try again.".to_string()),
         };
 

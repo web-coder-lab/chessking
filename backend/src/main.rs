@@ -76,6 +76,7 @@ async fn main() -> anyhow::Result<()> {
     // SmartIpKeyExtractor reads X-Forwarded-For / X-Real-IP so rate limits
     // work correctly behind Render's reverse proxy (PeerIp alone fails with
     // "Unable To Extract Key!" on every request).
+    // Global API backstop
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
             .key_extractor(SmartIpKeyExtractor)
@@ -85,6 +86,18 @@ async fn main() -> anyhow::Result<()> {
             .expect("valid governor config")
     );
     let governor_layer = GovernorLayer { config: governor_conf };
+
+    // Phase 5: stricter limit on auth public routes (login/register/forgot/reset)
+    // ~1 req/s sustained, burst 5 — credential stuffing / enum resistance
+    let auth_governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .key_extractor(SmartIpKeyExtractor)
+            .per_second(1)
+            .burst_size(5)
+            .finish()
+            .expect("valid auth governor config")
+    );
+    let auth_governor_layer = GovernorLayer { config: auth_governor_conf };
 
     // Protected routes get the require_auth middleware layer (Doc 3 §8:
     // every backend endpoint independently re-validates the JWT).
@@ -103,8 +116,9 @@ async fn main() -> anyhow::Result<()> {
     // not part of the application's documented API surface.
     // Rate-limit only API routes — leave /health unrestricted so Render
     // load-balancer health checks never get 429'd.
+    let auth_public = auth::public_routes().layer(auth_governor_layer);
     let api_v1 = Router::new()
-        .merge(auth::public_routes())
+        .merge(auth_public)
         .merge(wallet::public_routes())
         .merge(game::public_routes())
         .merge(anticheat::public_routes())

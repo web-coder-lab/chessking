@@ -73,6 +73,23 @@ pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::em
         if e_taken { return Err(AuthError::EmailTaken); }
     }
 
+    // Phase 5: device fingerprint velocity — max 3 registrations / hour / fingerprint
+    if let Some(fp) = req.device_fingerprint.as_ref().filter(|s| !s.is_empty()) {
+        let window = (Utc::now() - Duration::hours(1)).to_rfc3339();
+        let pattern = format!("%{}%", fp);
+        let count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM security_events WHERE event_type = 'register_attempt' AND metadata LIKE ? AND created_at > ?"
+        )
+        .bind(&pattern)
+        .bind(&window)
+        .fetch_one(pool)
+        .await
+        .unwrap_or((0,));
+        if count.0 >= 3 {
+            return Err(AuthError::RateLimited);
+        }
+    }
+
     // Step 5: hash password (Argon2id)
     let password_hash = hash_password(&req.password)?;
 
