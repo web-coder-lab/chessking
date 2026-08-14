@@ -1,6 +1,7 @@
 use chrono::Utc;
 use serde::Serialize;
 use sqlx::SqlitePool;
+use uuid::Uuid;
 
 use crate::wallet::ledger::{apply_ledger_entry, LedgerEntryInput};
 use super::errors::SocialError;
@@ -9,11 +10,33 @@ use super::errors::SocialError;
 pub struct ReferralLinkResponse { pub invite_link_code: String, pub share_url: String }
 
 pub async fn get_referral_link(pool: &SqlitePool, user_id: &str) -> Result<ReferralLinkResponse, SocialError> {
-    let row: (String,) = sqlx::query_as("SELECT referral_code FROM users WHERE id = ?")
-        .bind(user_id).fetch_one(pool).await?;
+    // Users created before referral_code backfill may have NULL — generate once.
+    let existing: Option<(Option<String>,)> = sqlx::query_as(
+        "SELECT referral_code FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?;
+
+    let Some((code_opt,)) = existing else {
+        return Err(SocialError::NotFound);
+    };
+
+    let code = if let Some(c) = code_opt.filter(|s| !s.is_empty()) {
+        c
+    } else {
+        let c = format!("gc{}", &Uuid::new_v4().to_string().replace('-', "")[..10]);
+        sqlx::query("UPDATE users SET referral_code = ? WHERE id = ?")
+            .bind(&c)
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+        c
+    };
+
     Ok(ReferralLinkResponse {
-        invite_link_code: row.0.clone(),
-        share_url: format!("https://chessking.app/invite/{}", row.0),
+        invite_link_code: code.clone(),
+        share_url: format!("https://genius-clan.onrender.com/invite?code={}", code),
     })
 }
 
@@ -22,7 +45,7 @@ pub struct ReferralProgressRow {
     pub referral_id: String, pub username: String, pub spent: i64, pub target: i64, pub claimable: i64,
 }
 
-/// Doc 9 Sec8: GET /referral/progress -> { referrals: [{ username, spent, target, claimable }] }
+/// Doc 9 Sec8: GET /referral/progress
 pub async fn referral_progress(pool: &SqlitePool, user_id: &str) -> Result<Vec<ReferralProgressRow>, SocialError> {
     let rows = sqlx::query_as::<_, ReferralProgressRow>(
         "SELECT r.id AS referral_id, u.username, r.invited_topup_pkr AS spent, r.invited_topup_target_pkr AS target,
@@ -37,13 +60,6 @@ pub async fn referral_progress(pool: &SqlitePool, user_id: &str) -> Result<Vec<R
 #[derive(Debug, Serialize)]
 pub struct ClaimReferralResponse { pub status: String, pub coins_awarded: i64 }
 
-/// Doc 9 Sec8: POST /referral/{referral_id}/claim. Doc 5-adjacent
-/// referral rule: reward only claimable once the invited user's
-/// cumulative top-up reaches the target, and only once per referral.
-/// Doc 8 Sec8 Referral Shield: same-device/IP correlation withholds this
-/// automatically (device_fingerprint::referral_shares_device_or_ip is
-/// checked at referral-creation time, not claim time, since that's when
-/// the correlation actually happens).
 pub async fn claim_referral(pool: &SqlitePool, user_id: &str, referral_id: &str) -> Result<ClaimReferralResponse, SocialError> {
     #[derive(sqlx::FromRow)]
     struct Row { inviter_id: String, invited_topup_pkr: i64, invited_topup_target_pkr: i64, reward_claimed: i64, reward_coins: i64 }
