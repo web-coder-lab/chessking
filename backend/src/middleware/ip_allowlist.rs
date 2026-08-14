@@ -86,21 +86,7 @@ fn ip_in_cidr(ip: &IpAddr, base: &IpAddr, prefix: u8) -> bool {
 }
 
 fn genius_404() -> Response {
-    let body = r#"<!DOCTYPE html><html><head><meta charset="utf-8"/><title>404 — Genius Clan</title>
-<style>body{margin:0;background:#0F1115;color:#F5F5F5;font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}
-.card{background:#1A1D23;border-top:3px solid #D4AF37;border-radius:16px;padding:40px;text-align:center;max-width:400px}
-.brand{color:#D4AF37;letter-spacing:3px;text-transform:uppercase;font-size:12px}
-.code{font-size:64px;color:#D4AF37;margin:12px 0;font-weight:700}
-p{color:#9CA3AF;font-size:14px}</style></head>
-<body><div class="card"><div class="brand">♚ Genius Clan</div><div class="code">404</div>
-<p>Not found. If you expected API access, your IP is not on the allowlist.</p>
-</div></body></html>"#;
-    (
-        StatusCode::NOT_FOUND,
-        [("content-type", "text/html; charset=utf-8")],
-        body,
-    )
-        .into_response()
+    crate::middleware::genius_404::genius_404_response()
 }
 
 pub async fn enforce_ip_allowlist(

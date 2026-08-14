@@ -38,14 +38,14 @@ pub async fn block_probes(req: Request<Body>, next: Next) -> Response {
     for needle in BLOCKED_SUBSTRINGS {
         if path.contains(needle) || raw.contains(needle) {
             crate::anticheat::monitor::log_probe_blocked(&path);
-            return (StatusCode::NOT_FOUND, "not found").into_response();
+            return crate::middleware::genius_404::genius_404_response();
         }
     }
 
     // Reject obviously non-API junk methods on API host (TRACE/TRACK)
     let method = req.method().as_str();
     if method == "TRACE" || method == "TRACK" {
-        return (StatusCode::METHOD_NOT_ALLOWED, "method not allowed").into_response();
+        return crate::middleware::genius_404::genius_404_response();
     }
 
     next.run(req).await

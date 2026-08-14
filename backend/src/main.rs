@@ -194,6 +194,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health))
         .route("/health/store", get(health_store))
         .nest("/api/v1", api_v1)
+        .fallback(|| async { middleware::genius_404::genius_404_response() })
         .layer(from_fn(middleware::probe_guard::block_probes))
         .layer(from_fn_with_state(state.clone(), middleware::ip_allowlist::enforce_ip_allowlist))
         .layer(cors)
