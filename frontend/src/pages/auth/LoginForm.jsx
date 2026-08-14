@@ -14,6 +14,8 @@ export default function LoginForm({ onSwitchTab }) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [captcha, setCaptcha] = useState(null); // { challenge_id, kind, board_fen, prompt }
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [formError, setFormError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendState, setResendState] = useState('idle'); // idle | sending | sent
@@ -68,7 +70,18 @@ export default function LoginForm({ onSwitchTab }) {
     setApprovalDeniedMsg('');
     setLoading(true);
     try {
-      const result = await authApi.login(identifier, password);
+      const result = await authApi.login(
+        identifier,
+        password,
+        captcha ? { challenge_id: captcha.challenge_id, answer: captchaAnswer } : null,
+      );
+      if (result.requires_captcha && result.captcha) {
+        setCaptcha(result.captcha);
+        setCaptchaAnswer('');
+        setFormError('Please complete the security check.');
+        return;
+      }
+      setCaptcha(null);
       if (!result.requires_2fa) {
         // two_fa_enabled = 0 → straight to dashboard (§4.3)
         setSession(result);
@@ -201,6 +214,21 @@ export default function LoginForm({ onSwitchTab }) {
             </button>
           )}
         </p>
+      )}
+
+      {captcha && (
+        <div style={{ margin: '12px 0', padding: 12, border: '1px solid #2A2E37', borderRadius: 8 }}>
+          <p style={{ marginBottom: 8 }}><strong>Security check</strong></p>
+          <p style={{ marginBottom: 8 }}>{captcha.prompt}</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }}>Board: {captcha.board_fen}</p>
+          <Input
+            id="login-captcha"
+            placeholder="Answer (square like d4, or black/white)"
+            value={captchaAnswer}
+            onChange={(e) => setCaptchaAnswer(e.target.value)}
+            autoComplete="off"
+          />
+        </div>
       )}
 
       <button type="button" className="ck-auth-secondary-link" onClick={() => onSwitchTab('forgot')}>

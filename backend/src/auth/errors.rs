@@ -17,6 +17,8 @@ pub enum AuthError {
     InvalidCredentials,               // generic — never reveal which field was wrong
     EmailNotVerified,
     AccountLocked { retry_after_secs: i64 },
+    /// Phase 4: solve chess CAPTCHA then retry login
+    CaptchaRequired,
 
     // --- 2FA (§4) ---
     TwoFaCodeIncorrect,
@@ -56,6 +58,7 @@ impl IntoResponse for AuthError {
 
             AuthError::InvalidCredentials => (StatusCode::UNAUTHORIZED, "invalid_credentials", "Invalid username/email or password.".to_string()),
             AuthError::EmailNotVerified => (StatusCode::FORBIDDEN, "email_not_verified", "Please verify your email before logging in.".to_string()),
+            AuthError::CaptchaRequired => (StatusCode::FORBIDDEN, "captcha_required", "Please complete the security check and try again.".to_string()),
             AuthError::AccountLocked { retry_after_secs } => (StatusCode::TOO_MANY_REQUESTS, "account_locked", format!("Too many failed attempts. Try again in {retry_after_secs} seconds.")),
 
             AuthError::TwoFaCodeIncorrect => (StatusCode::UNAUTHORIZED, "2fa_incorrect", "Incorrect 2FA code.".to_string()),

@@ -168,6 +168,11 @@ async fn resend_verification_handler(State(state): State<AppState>, Json(req): J
 struct LoginResponse {
     requires_2fa: bool,
     requires_device_approval: bool,
+    /// Phase 4: client must solve captcha and resubmit login
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    requires_captcha: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    captcha: Option<crate::anticheat::captcha::CaptchaChallenge>,
     pending_id: Option<String>,
     access_token: Option<String>,
     refresh_token: Option<String>,
@@ -175,12 +180,47 @@ struct LoginResponse {
 
 async fn login_handler(State(state): State<AppState>, Json(req): Json<login::LoginRequest>) -> Result<Json<LoginResponse>, AuthError> {
     let store = state.github_store.as_deref();
+    let identifier_lower = req.identifier.to_lowercase();
+    let fails = login::count_recent_failures(&state.db, &identifier_lower).await.unwrap_or(0);
+
+    // Phase 4: after 3 fails, require chess CAPTCHA before credential check
+    if fails >= login::CAPTCHA_AFTER_FAILURES {
+        let has_captcha = req.captcha_challenge_id.as_ref().filter(|s| !s.is_empty()).is_some()
+            && req.captcha_answer.as_ref().filter(|s| !s.is_empty()).is_some();
+        if !has_captcha {
+            let challenge = crate::anticheat::captcha::generate_challenge(&state.db)
+                .await
+                .map_err(|_| AuthError::Internal)?;
+            return Ok(Json(LoginResponse {
+                requires_2fa: false,
+                requires_device_approval: false,
+                requires_captcha: true,
+                captcha: Some(challenge),
+                pending_id: None,
+                access_token: None,
+                refresh_token: None,
+            }));
+        }
+        let ok = crate::anticheat::captcha::verify_captcha(
+            &state.db,
+            crate::anticheat::captcha::VerifyCaptchaRequest {
+                challenge_id: req.captcha_challenge_id.clone().unwrap_or_default(),
+                answer: req.captcha_answer.clone().unwrap_or_default(),
+            },
+        )
+        .await
+        .map_err(|_| AuthError::Internal)?;
+        if !ok {
+            return Err(AuthError::CaptchaRequired);
+        }
+    }
+
     let user = login::login_step_1_verify_credentials(&state.db, &req, store).await?;
 
     if user.two_fa_enabled == 0 {
         let tokens = issue_tokens_for_new_session(&state, &user.id, &user.role, req.device_fingerprint.as_deref(), req.ip_address.as_deref(), req.browser.as_deref(), req.os.as_deref()).await?;
         return Ok(Json(LoginResponse {
-            requires_2fa: false, requires_device_approval: false, pending_id: None,
+            requires_2fa: false, requires_device_approval: false, requires_captcha: false, captcha: None, pending_id: None,
             access_token: Some(tokens.access_token), refresh_token: Some(tokens.refresh_token),
         }));
     }
@@ -189,11 +229,11 @@ async fn login_handler(State(state): State<AppState>, Json(req): Json<login::Log
     match case {
         two_fa::DeviceCase::NoActiveSession | two_fa::DeviceCase::ActiveButOffline => {
             let pending_id = two_fa::create_pending_2fa(&state.db, &user.id, req.device_fingerprint.as_deref(), false).await?;
-            Ok(Json(LoginResponse { requires_2fa: true, requires_device_approval: false, pending_id: Some(pending_id), access_token: None, refresh_token: None }))
+            Ok(Json(LoginResponse { requires_2fa: true, requires_device_approval: false, requires_captcha: false, captcha: None, pending_id: Some(pending_id), access_token: None, refresh_token: None }))
         }
         two_fa::DeviceCase::ActiveAndOnline => {
             let pending_id = two_fa::create_pending_2fa(&state.db, &user.id, req.device_fingerprint.as_deref(), true).await?;
-            Ok(Json(LoginResponse { requires_2fa: true, requires_device_approval: true, pending_id: Some(pending_id), access_token: None, refresh_token: None }))
+            Ok(Json(LoginResponse { requires_2fa: true, requires_device_approval: true, requires_captcha: false, captcha: None, pending_id: Some(pending_id), access_token: None, refresh_token: None }))
         }
     }
 }

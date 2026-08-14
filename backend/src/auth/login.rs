@@ -13,6 +13,9 @@ pub struct LoginRequest {
     pub ip_address: Option<String>,
     pub browser: Option<String>,
     pub os: Option<String>,
+    /// Phase 4: required after ≥3 failed attempts in the lockout window
+    pub captcha_challenge_id: Option<String>,
+    pub captcha_answer: Option<String>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -27,6 +30,21 @@ pub struct UserAuthRow {
 
 const MAX_FAILED_ATTEMPTS: i64 = 5;
 const LOCKOUT_WINDOW_MINUTES: i64 = 15;
+/// Phase 4: CAPTCHA step-up after this many fails (before hard lockout at 5)
+pub const CAPTCHA_AFTER_FAILURES: i64 = 3;
+
+pub async fn count_recent_failures(pool: &SqlitePool, identifier_lower: &str) -> Result<i64, AuthError> {
+    let window_start = (Utc::now() - chrono::Duration::minutes(LOCKOUT_WINDOW_MINUTES)).to_rfc3339();
+    let pattern = format!("%{}%", identifier_lower);
+    let row: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM security_events WHERE event_type = 'login_failed' AND metadata LIKE ? AND created_at > ?"
+    )
+    .bind(&pattern)
+    .bind(&window_start)
+    .fetch_one(pool)
+    .await?;
+    Ok(row.0)
+}
 
 /// §3.2 steps 1-6, exactly in order. Never reveals whether the identifier
 /// matched an account — same generic error for "not found" and "wrong

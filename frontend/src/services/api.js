@@ -45,6 +45,12 @@ function cryptoRandomId() {
   return id;
 }
 
+export const captchaApi = {
+  generate: () => request('/captcha/generate', { method: 'POST', body: '{}' }),
+  verify: (challenge_id, answer) =>
+    request('/captcha/verify', { method: 'POST', body: JSON.stringify({ challenge_id, answer }) }),
+};
+
 export const authApi = {
   register: (username, email, password) =>
     request('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password, ...deviceContext() }) }),
@@ -55,8 +61,11 @@ export const authApi = {
   resendVerification: (email) =>
     request('/auth/resend-verification', { method: 'POST', body: JSON.stringify({ email }) }),
 
-  login: (identifier, password) =>
-    request('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password, ...deviceContext() }) }),
+  login: (identifier, password, captcha) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({
+      identifier, password, ...deviceContext(),
+      ...(captcha ? { captcha_challenge_id: captcha.challenge_id, captcha_answer: captcha.answer } : {}),
+    }) }),
 
   // §5 Case C: only the already-logged-in OLD device calls this, so it's
   // a protected route (needs the caller's own access token) - it decides
