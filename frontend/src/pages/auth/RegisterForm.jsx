@@ -48,8 +48,11 @@ export default function RegisterForm() {
   if (verifyState) {
     return (
       <div className="ck-auth-pending-state">
-        <p>Check your email to verify your account.</p>
-        <p className="text-secondary">We sent a link to {email}. It expires in 15 minutes.</p>
+        <p>Account created.</p>
+        <p className="text-secondary">
+          We emailed a verification link to {email} (check spam).
+          You can also switch to Login and sign in now.
+        </p>
       </div>
     );
   }

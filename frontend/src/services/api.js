@@ -12,22 +12,40 @@ export function setCurrentAccessToken(token) {
   currentAccessToken = token;
 }
 
+function authHeaders() {
+  return currentAccessToken ? { Authorization: `Bearer ${currentAccessToken}` } : {};
+}
+
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  const { skipAuth, headers: extraHeaders, ...rest } = options;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(skipAuth ? {} : authHeaders()),
+    ...extraHeaders,
+  };
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...rest, headers });
+  } catch (e) {
+    // Browser "Failed to fetch" — CORS, offline, wrong host, or sleeping server
+    const err = new Error(
+      'Cannot reach server. Wait a few seconds (free server may be waking up) and try again.'
+    );
+    err.code = 'network_error';
+    throw err;
+  }
 
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    // Backend AuthError responses shape: { error: "code", message: "..." }
-    // Doc 9: standard error shape is { error: { code, message } }
-    const err = new Error(data.error?.message || 'Something went wrong.');
-    err.code = data.error?.code;
+    const msg =
+      (data.error && typeof data.error === 'object' && data.error.message) ||
+      (typeof data.error === 'string' ? data.error : null) ||
+      data.message ||
+      'Something went wrong.';
+    const err = new Error(msg);
+    err.code = (data.error && data.error.code) || data.code || 'error';
     err.status = res.status;
     throw err;
   }
@@ -114,9 +132,7 @@ export const authApi = {
 
 // §8: every protected call carries the current access token — the
 // backend independently re-validates it on every request regardless.
-function authHeaders() {
-  return currentAccessToken ? { Authorization: `Bearer ${currentAccessToken}` } : {};
-}
+
 
 export const walletApi = {
   getBalance: () => request('/wallet/balance', { headers: authHeaders() }),
