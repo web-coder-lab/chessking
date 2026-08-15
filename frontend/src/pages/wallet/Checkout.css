@@ -1,5 +1,6 @@
 .ck-checkout {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: var(--space-8);
 }

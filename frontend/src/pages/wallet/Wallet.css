@@ -1,5 +1,6 @@
 .ck-wallet {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: 84px;
 }
@@ -116,4 +117,15 @@
 
 .ck-wallet__tx-amount--negative {
   color: var(--danger-red);
+}
+
+
+.ck-wallet__package-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  transition: border-color var(--transition-standard);
+}
+.ck-wallet__package-card:active {
+  border-color: var(--accent-gold);
 }

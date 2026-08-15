@@ -1,5 +1,6 @@
 .ck-inventory {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: 84px;
 }
@@ -62,4 +63,14 @@
   height: 100px;
   object-fit: cover;
   border-radius: var(--radius-card);
+}
+
+
+.ck-inventory__sheet {
+  background: var(--bg-surface);
+  border-top: 3px solid var(--accent-gold);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+.ck-inventory__sheet-overlay {
+  background: rgba(15, 17, 21, 0.85);
 }

@@ -1,5 +1,6 @@
 .ck-shop {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: 84px;
 }
@@ -120,4 +121,30 @@
 .ck-shop__modal-price {
   font-size: 18px;
   color: var(--accent-gold);
+}
+
+
+.ck-shop__item-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: var(--space-3);
+  transition: border-color var(--transition-standard), transform var(--transition-standard);
+}
+.ck-shop__item-card:active {
+  transform: scale(var(--pressed-scale));
+  border-color: var(--accent-gold-border);
+}
+.ck-shop__item-price {
+  color: var(--accent-gold);
+  font-weight: var(--text-stat-weight);
+}
+.ck-shop__modal-overlay {
+  background: rgba(15, 17, 21, 0.85);
+}
+.ck-shop__modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-top: 3px solid var(--accent-gold);
+  border-radius: var(--radius-card);
 }
