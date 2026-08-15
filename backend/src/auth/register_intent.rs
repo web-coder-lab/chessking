@@ -185,3 +185,81 @@ pub async fn consume_intent(
         .map_err(map_err)?;
     Ok(record)
 }
+
+
+#[derive(Debug, Deserialize)]
+pub struct CompleteSignupRequest {
+    pub token: String,
+    pub username: String,
+    pub password: String,
+    pub device_fingerprint: Option<String>,
+    pub browser: Option<String>,
+    pub os: Option<String>,
+}
+
+/// Creates the durable user from a valid intent token. Returns user_id.
+pub async fn complete_signup(
+    pool: &sqlx::SqlitePool,
+    gh: Option<&GitHubStore>,
+    req: CompleteSignupRequest,
+) -> Result<String, AuthError> {
+    use super::password::hash_password;
+    use super::validation::{validate_password, validate_username};
+
+    validate_username(&req.username)?;
+    validate_password(&req.password)?;
+
+    let Some(store) = gh else {
+        return Err(AuthError::Internal);
+    };
+
+    let intent = consume_intent(store, &req.token).await?;
+    let email_lower = intent.email;
+    let username_lower = req.username.to_lowercase();
+
+    let (u_taken, e_taken) =
+        github_users::username_or_email_taken(store, &username_lower, &email_lower).await?;
+    if u_taken {
+        return Err(AuthError::UsernameTaken);
+    }
+    if e_taken {
+        return Err(AuthError::EmailTaken);
+    }
+
+    let user_id = Uuid::new_v4().to_string();
+    let password_hash = hash_password(&req.password)?;
+    let now = Utc::now().to_rfc3339();
+
+    let mut tx = pool.begin().await.map_err(AuthError::from)?;
+    sqlx::query(
+        "INSERT INTO users (id, username, username_lower, email, password_hash, email_verified, rating, coin_balance, role, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 1, 1200, 0, 'user', 'active', ?, ?)",
+    )
+    .bind(&user_id)
+    .bind(&req.username)
+    .bind(&username_lower)
+    .bind(&email_lower)
+    .bind(&password_hash)
+    .bind(&now)
+    .bind(&now)
+    .execute(&mut *tx)
+    .await
+    .map_err(AuthError::from)?;
+
+    crate::shop::inventory::grant_default_items(&mut tx, &user_id)
+        .await
+        .map_err(AuthError::from)?;
+    tx.commit().await.map_err(AuthError::from)?;
+
+    let mut gu = github_users::new_user(
+        user_id.clone(),
+        req.username.clone(),
+        email_lower,
+        password_hash,
+    );
+    gu.email_verified = true;
+    github_users::save_user(store, &gu).await?;
+    let _ = crate::shop::github_inventory::sync_from_sql(store, pool, &user_id).await;
+
+    Ok(user_id)
+}

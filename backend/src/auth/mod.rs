@@ -394,6 +394,33 @@ async fn revoke_session_handler(State(state): State<AppState>, Extension(claims)
 // ---------------------------------------------------------
 // POST /auth/register-intent  (Part 10: email only → complete-signup link)
 // ---------------------------------------------------------
+
+async fn complete_signup_handler(
+    State(state): State<AppState>,
+    Json(req): Json<register_intent::CompleteSignupRequest>,
+) -> Result<Json<TokenPair>, AuthError> {
+    let fp = req.device_fingerprint.clone();
+    let browser = req.browser.clone();
+    let os = req.os.clone();
+    let user_id = register_intent::complete_signup(
+        &state.db,
+        state.github_store.as_deref(),
+        req,
+    )
+    .await?;
+    let tokens = issue_tokens_for_new_session(
+        &state,
+        &user_id,
+        "user",
+        fp.as_deref(),
+        None,
+        browser.as_deref(),
+        os.as_deref(),
+    )
+    .await?;
+    Ok(Json(tokens))
+}
+
 async fn register_intent_handler(
     State(state): State<AppState>,
     Json(req): Json<register_intent::RegisterIntentRequest>,
@@ -411,6 +438,7 @@ async fn register_intent_handler(
 pub fn public_routes() -> Router<AppState> {
     Router::new()
         .route("/auth/register-intent", post(register_intent_handler))
+        .route("/auth/complete-signup", post(complete_signup_handler))
         .route("/auth/register", post(register_handler))
         .route("/auth/verify-email", post(verify_email_handler))
         .route("/auth/resend-verification", post(resend_verification_handler))

@@ -82,6 +82,13 @@ export const authApi = {
   registerIntent: (email) =>
     request('/auth/register-intent', { method: 'POST', body: JSON.stringify({ email }), skipAuth: true }),
 
+  completeSignup: (token, username, password) =>
+    request('/auth/complete-signup', {
+      method: 'POST',
+      skipAuth: true,
+      body: JSON.stringify({ token, username, password, ...deviceContext() }),
+    }),
+
   verifyEmail: (token) =>
     request('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token, ...deviceContext() }) }),
 
