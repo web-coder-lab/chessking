@@ -1,6 +1,5 @@
-/* Chess King — Design Tokens (Doc 4 §1)
-   Every value here is copied verbatim from 03_UI_DESIGN_SPEC.md.
-   Never hardcode a hex/px value in a component — reference these vars. */
+/* Genius Clan — Design Tokens
+   Dark board + royal gold. Components should use these vars, not raw hex. */
 
 :root {
   /* §1.1 Color palette */
@@ -14,6 +13,11 @@
   --text-primary: #F5F5F5;
   --text-secondary: #9CA3AF;
   --border-subtle: #2A2E37;
+  --accent-gold-soft: rgba(212, 175, 55, 0.12);
+  --accent-gold-border: rgba(212, 175, 55, 0.35);
+  --danger-soft: rgba(231, 76, 60, 0.15);
+  --success-soft: rgba(46, 204, 113, 0.15);
+  --brand-name: 'Genius Clan';
 
   /* §1.2 Typography */
   --font-display: 'Poppins', sans-serif;   /* page/section titles */
@@ -116,4 +120,50 @@ h2.section-heading {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+
+/* —— Genius Clan shared chrome —— */
+.ck-brand-bar {
+  font-family: var(--font-display);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--accent-gold);
+  text-align: center;
+}
+
+.ck-page-shell {
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+}
+
+.ck-card-gold {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-top: 3px solid var(--accent-gold);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.ck-btn-primary {
+  background: var(--accent-gold);
+  color: var(--bg-primary);
+  font-family: var(--font-body);
+  font-weight: var(--text-button-weight);
+  font-size: var(--text-button-size);
+  border: none;
+  border-radius: var(--radius-button);
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: transform var(--transition-standard), opacity var(--transition-standard);
+}
+.ck-btn-primary:active {
+  transform: scale(var(--pressed-scale));
+}
+.ck-btn-primary:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
 }
