@@ -1,5 +1,6 @@
 .ck-profile {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-bottom: 84px;
 }
 
@@ -87,4 +88,18 @@
   border-radius: var(--space-2);
   padding: var(--space-3);
   font-size: 24px;
+}
+
+
+.ck-profile {
+  background: var(--bg-primary);
+  min-height: 100dvh;
+}
+.ck-profile__banner {
+  background: linear-gradient(135deg, var(--bg-surface), #252018) !important;
+  border-bottom: 2px solid var(--accent-gold);
+}
+.ck-profile__avatar {
+  border: 3px solid var(--accent-gold) !important;
+  background: var(--bg-surface) !important;
 }
