@@ -46,7 +46,7 @@ export default function Shop({ user }) {
 
   return (
     <div className="ck-shop">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={balance} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={balance} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-shop__body">
         {/* §2.5: horizontal tab/segment switcher */}

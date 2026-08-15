@@ -88,7 +88,7 @@ export default function Play({ user }) {
 
   return (
     <div className="ck-play">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-play__body">
         <h1 className="page-title" style={{ marginBottom: 'var(--space-4)' }}>Play</h1>

@@ -110,7 +110,7 @@ export default function Checkout({ user }) {
 
   return (
     <div className="ck-checkout">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-checkout__body">
         <h1 className="page-title">Add Coins</h1>

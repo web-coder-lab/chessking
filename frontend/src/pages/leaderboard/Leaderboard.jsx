@@ -32,7 +32,7 @@ export default function Leaderboard({ user }) {
 
   return (
     <div className="ck-leaderboard">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-leaderboard__body">
         <div className="ck-shop__segments" role="tablist">

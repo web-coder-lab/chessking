@@ -16,7 +16,7 @@ const CATEGORIES = [
   { key: 'banner', label: 'Banners' },
 ];
 
-export default function Inventory({ user }) {
+export default function Inventory({ user, refreshUser }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedCategory = searchParams.get('category');
@@ -35,6 +35,7 @@ export default function Inventory({ user }) {
     // §2.2: equipping auto-unequips the previous item in the same
     // category — UI reflects this instantly.
     await inventoryApi.equip(item.inventory_id);
+    await refreshUser?.();
     setItems((prev) =>
       prev.map((i) => {
         if (i.category !== item.category) return i;
@@ -46,7 +47,7 @@ export default function Inventory({ user }) {
 
   return (
     <div className="ck-inventory">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-inventory__body">
         <div className="ck-shop__segments" role="tablist">

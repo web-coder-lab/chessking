@@ -57,3 +57,15 @@
   background: var(--accent-gold);
   border: 1.5px solid var(--bg-primary);
 }
+
+.ck-topbar__avatar--emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1A1D23;
+  font-size: 18px;
+  line-height: 1;
+}

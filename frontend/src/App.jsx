@@ -63,7 +63,7 @@ function AppRoutes() {
       <Route path="/wallet" element={<ProtectedRoute><WalletScreen user={user} /></ProtectedRoute>} />
       <Route path="/wallet/checkout" element={<ProtectedRoute><Checkout user={user} /></ProtectedRoute>} />
       <Route path="/shop" element={<ProtectedRoute><Shop user={user} /></ProtectedRoute>} />
-      <Route path="/inventory" element={<ProtectedRoute><Inventory user={user} /></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute><Inventory user={user} refreshUser={refreshUser} /></ProtectedRoute>} />
       <Route path="/play" element={<ProtectedRoute><Play user={user} /></ProtectedRoute>} />
       <Route path="/board/:matchId" element={<ProtectedRoute><ChessBoard user={user} /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard user={user} /></ProtectedRoute>} />

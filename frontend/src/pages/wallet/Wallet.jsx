@@ -41,7 +41,7 @@ export default function WalletScreen({ user }) {
 
   return (
     <div className="ck-wallet">
-      <TopBar avatarUrl={user?.avatarUrl} coinBalance={balance} onBellClick={() => navigate('/notifications')} />
+      <TopBar avatarUser={user} coinBalance={balance} onBellClick={() => navigate('/notifications')} />
 
       <main className="ck-wallet__body">
         {/* §2.4: large balance card, gold gradient, full-width */}

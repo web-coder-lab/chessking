@@ -80,7 +80,7 @@ export default function Dashboard({ user, refreshUser }) {
   return (
     <div className="ck-dashboard">
       <TopBar
-        avatarUrl={user?.avatarUrl}
+        avatarUser={user}
         coinBalance={user?.coin_balance ?? 0}
         hasUnread={user?.hasUnreadNotifications}
         onBellClick={() => navigate('/notifications')}

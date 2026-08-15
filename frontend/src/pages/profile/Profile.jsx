@@ -1,3 +1,4 @@
+import { avatarEmoji, bannerEmoji } from '../../utils/avatar';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import BottomNav from '../../components/navigation/BottomNav';
@@ -58,8 +59,12 @@ export default function Profile({ user }) {
 
   return (
     <div className="ck-profile">
-      <div className="ck-profile__banner" />
-      <img src="/assets/default-avatar.svg" alt="" className="ck-profile__avatar" />
+      <div className="ck-profile__banner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, background: 'linear-gradient(135deg,#1A1D23,#252018)' }}>
+        {bannerEmoji(user?.banner_id)}
+      </div>
+      <div className="ck-profile__avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, background: '#1A1D23' }}>
+        {avatarEmoji(user?.avatar_id)}
+      </div>
 
       {isMe && (
         <>
