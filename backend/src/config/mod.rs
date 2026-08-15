@@ -41,7 +41,7 @@ impl AppConfig {
                 .parse()?,
             smtp_host: env::var("SMTP_HOST").unwrap_or_default(),
             smtp_user: env::var("SMTP_USER").unwrap_or_default(),
-            smtp_pass: env::var("SMTP_PASS").unwrap_or_default(),
+            smtp_pass: env::var("SMTP_PASS").unwrap_or_default().chars().filter(|c| !c.is_whitespace()).collect(),
             smtp_port: env::var("SMTP_PORT").ok().and_then(|s| s.parse().ok()),
             frontend_base_url: env::var("FRONTEND_BASE_URL")
                 .unwrap_or_else(|_| "http://localhost:5173".to_string()),

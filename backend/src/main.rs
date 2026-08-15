@@ -193,6 +193,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/health", get(health))
         .route("/health/store", get(health_store))
+        .route("/health/email", get(health_email))
         .nest("/api/v1", api_v1)
         .fallback(|| async { middleware::genius_404::genius_404_response() })
         .layer(from_fn(middleware::probe_guard::block_probes))
@@ -253,3 +254,11 @@ async fn health_store(State(state): State<AppState>) -> axum::response::Response
         },
     }
 }
+
+async fn health_email(State(state): State<AppState>) -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({
+        "smtp_configured": state.email.is_configured(),
+        "from": if state.email.is_configured() { "set" } else { "unset" }
+    }))
+}
+

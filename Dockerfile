@@ -1,5 +1,5 @@
 # Genius Clan API — multi-stage build (Render free tier)
-FROM rust:1.83-bookworm AS builder
+FROM rust:1.97-bookworm AS builder
 WORKDIR /app
 
 # Migrations path: sqlx::migrate!("../database/migrations") from Cargo.toml dir

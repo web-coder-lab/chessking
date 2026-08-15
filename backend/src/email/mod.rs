@@ -64,6 +64,10 @@ impl EmailClient {
         Self { transport, from: smtp_user.to_string() }
     }
 
+    pub fn is_configured(&self) -> bool {
+        self.transport.is_some()
+    }
+
     /// §2.3 step 8 / §2.5: verification email. `deep_link_base` is the
     /// frontend origin, e.g. https://genius-clan.onrender.com — token is appended
     /// as a query param and consumed by the Verify Email screen.
