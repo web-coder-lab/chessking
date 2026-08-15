@@ -45,6 +45,8 @@ pub enum AuthError {
 
     /// Phase 5: registration / sensitive action velocity exceeded
     RateLimited,
+    /// SMTP configured but send failed (or not configured when required)
+    EmailSendFailed,
     Internal,
 }
 
@@ -80,6 +82,7 @@ impl IntoResponse for AuthError {
             AuthError::ResendLimitExceeded => (StatusCode::TOO_MANY_REQUESTS, "resend_limit", "Please contact support to verify your email.".to_string()),
 
             AuthError::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "rate_limited", "Too many attempts. Please wait and try again.".to_string()),
+            AuthError::EmailSendFailed => (StatusCode::BAD_GATEWAY, "email_send_failed", "Could not send email. Check SMTP settings or try again later.".to_string()),
             AuthError::Internal => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", "Something went wrong. Please try again.".to_string()),
         };
 

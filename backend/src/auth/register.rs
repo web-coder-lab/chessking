@@ -21,6 +21,7 @@ pub struct RegisterRequest {
 pub struct RegisterResponse {
     pub state: String, // "verify_email" — NOT logged in yet, per §2.3 step 9
     pub message: String,
+    pub email_sent: bool,
 }
 
 const VERIFICATION_TOKEN_TTL_MINUTES: i64 = 15;
@@ -152,16 +153,25 @@ pub async fn register(pool: &SqlitePool, req: RegisterRequest, email: &crate::em
     // Step 7: generate verification token, 15-minute expiry
     let token = issue_verification_token(pool, &user_id).await?;
 
-    // Step 8: send verification email. Fire-and-forget - the account is
-    // already created; a transient email failure shouldn't fail the
-    // whole registration response, and resend-verification exists for
-    // exactly this case.
-    let _ = email.send_verification_email(&req.email, &token, frontend_base_url).await;
+    // Step 8: try verification email — account already created; report send status
+    let email_sent = match email.send_verification_email(&req.email, &token, frontend_base_url).await {
+        Ok(()) => true,
+        Err(e) => {
+            tracing::error!(?e, to = %req.email, "verification email failed after register");
+            false
+        }
+    };
 
-    // Step 9: NOT logged in — frontend shows "verify your email" state
+    let message = if email_sent {
+        "Check your email to verify your account.".to_string()
+    } else {
+        "Account created, but verification email could not be sent. Use Resend or log in if already verified.".to_string()
+    };
+
     Ok(RegisterResponse {
         state: "verify_email".to_string(),
-        message: "Check your email to verify your account.".to_string(),
+        message,
+        email_sent,
     })
 }
 
@@ -294,8 +304,6 @@ pub async fn resend_verification(pool: &SqlitePool, user_id: &str, last_sent_at:
     }
 
     let token = issue_verification_token(pool, user_id).await?;
-    let _ = email.send_verification_email(&user.1, &token, frontend_base_url).await;
-    // Note: per-IP/per-device rate limiting and risk-based CAPTCHA (Doc 7)
-    // are applied in middleware before this function is ever called.
+    email.send_verification_email(&user.1, &token, frontend_base_url).await?;
     Ok(())
 }

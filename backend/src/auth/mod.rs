@@ -101,8 +101,12 @@ async fn notify_if_new_device(state: &AppState, user_id: &str, fingerprint: &str
 // ---------------------------------------------------------
 async fn register_handler(State(state): State<AppState>, Json(req): Json<register::RegisterRequest>) -> Result<Json<serde_json::Value>, AuthError> {
     let store = state.github_store.as_deref();
-    register::register(&state.db, req, &state.email, &state.config.frontend_base_url, store).await?;
-    Ok(Json(json!({ "status": "verify_email_sent" })))
+    let resp = register::register(&state.db, req, &state.email, &state.config.frontend_base_url, store).await?;
+    Ok(Json(json!({
+        "status": if resp.email_sent { "verify_email_sent" } else { "verify_email_pending" },
+        "email_sent": resp.email_sent,
+        "message": resp.message,
+    })))
 }
 
 // ---------------------------------------------------------

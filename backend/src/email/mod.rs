@@ -176,8 +176,8 @@ impl EmailClient {
 
     async fn send(&self, to: &str, subject: &str, html: String) -> Result<(), AuthError> {
         let Some(transport) = &self.transport else {
-            tracing::info!(to, subject, "SMTP not configured — email logged, not actually sent");
-            return Ok(());
+            tracing::error!(to, subject, "SMTP not configured — email NOT sent");
+            return Err(AuthError::EmailSendFailed);
         };
 
         // A display name on From: (not just a bare address) and a
