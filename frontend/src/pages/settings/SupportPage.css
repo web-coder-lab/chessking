@@ -124,3 +124,22 @@
   background: var(--accent-gold) !important;
   color: var(--bg-primary) !important;
 }
+
+.ck-support__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ck-support__copy {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: transparent;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-border);
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+}

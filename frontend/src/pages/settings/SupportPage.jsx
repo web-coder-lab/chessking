@@ -8,6 +8,7 @@ const DEFAULT_EMAIL = 'workn8312@gmail.com';
 export default function SupportPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(DEFAULT_EMAIL);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     supportApi
@@ -17,6 +18,16 @@ export default function SupportPage() {
       })
       .catch(() => {});
   }, []);
+
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
 
   return (
     <div className="ck-support">
@@ -29,7 +40,7 @@ export default function SupportPage() {
 
       <div className="ck-support__hero">
         <div className="ck-support__icon" aria-hidden>
-          ♟️
+          ♚
         </div>
         <p className="ck-support__brand">Genius Clan</p>
         <p className="ck-support__lead">
@@ -45,9 +56,14 @@ export default function SupportPage() {
           </a>
         </div>
         <p className="ck-support__hint">Usually reply within 24–48 hours.</p>
-        <a className="ck-support__cta" href={`mailto:${email}?subject=Genius%20Clan%20Support`}>
-          Send email
-        </a>
+        <div className="ck-support__actions">
+          <a className="ck-support__cta" href={`mailto:${email}?subject=Genius%20Clan%20Support`}>
+            Send email
+          </a>
+          <button type="button" className="ck-support__copy" onClick={copyEmail}>
+            {copied ? 'Copied' : 'Copy email'}
+          </button>
+        </div>
       </div>
 
       <div className="ck-support__tips">
