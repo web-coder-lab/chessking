@@ -26,46 +26,26 @@ function loadRefreshToken() {
   return localStorage.getItem('ck_refresh_token') || ck_getCookie('ck_refresh_token');
 }
 
-
-const ACCESS_TOKEN_TTL_MS = 5 * 60 * 1000;
-const REFRESH_MARGIN_MS = 30 * 1000; // refresh 30s before expiry
+/** Server JWT access TTL is 15 min; refresh a bit before that. */
+const ACCESS_TOKEN_TTL_MS = 12 * 60 * 1000;
+const REFRESH_MARGIN_MS = 60 * 1000;
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(() => loadRefreshToken());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  /** True until first silent refresh attempt finishes (avoids login flash). */
+  const [bootstrapping, setBootstrapping] = useState(() => !!loadRefreshToken());
   const refreshTimer = useRef(null);
-
-  // Every page that shows the logged-in person's own username, avatar,
-  // rating, or coin balance reads it from here - not from the tokens.
-  // Call after any action that could change the backend's copy of the
-  // user's own profile (e.g. a shop purchase changing coin_balance).
-  const refreshUser = useCallback(async () => {
-    try {
-      const profile = await socialApi.getMyProfile();
-      setUser(profile);
-      return profile;
-    } catch (e) {
-      return null;
-    }
-  }, []);
-
-  const setSession = useCallback((tokens) => {
-    setAccessToken(tokens.access_token);
-    setCurrentAccessToken(tokens.access_token);
-    setRefreshToken(tokens.refresh_token);
-    localStorage.setItem('ck_refresh_token', tokens.refresh_token);
-    ck_setCookie('ck_refresh_token', tokens.refresh_token, 30);
-    setIsAuthenticated(true);
-    scheduleRefresh(tokens.refresh_token);
-    refreshUser();
-  }, [refreshUser]);
+  const refreshTokenRef = useRef(refreshToken);
+  refreshTokenRef.current = refreshToken;
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setCurrentAccessToken(null);
     setRefreshToken(null);
+    refreshTokenRef.current = null;
     localStorage.removeItem('ck_refresh_token');
     ck_clearCookie('ck_refresh_token');
     setIsAuthenticated(false);
@@ -73,27 +53,90 @@ export function AuthProvider({ children }) {
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
   }, []);
 
-  // Doc 3 §7: "Silent refresh: frontend automatically requests a new
-  // access token shortly before the 5-minute expiry, no page reload, no
-  // user-visible interruption."
+  const refreshUser = useCallback(async () => {
+    try {
+      const profile = await socialApi.getMyProfile();
+      setUser(profile);
+      return profile;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const scheduleRefresh = useCallback((currentRefreshToken) => {
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    if (!currentRefreshToken) return;
     refreshTimer.current = setTimeout(async () => {
       try {
         const tokens = await authApi.refresh(currentRefreshToken);
-        setSession(tokens);
+        setAccessToken(tokens.access_token);
+        setCurrentAccessToken(tokens.access_token);
+        setRefreshToken(tokens.refresh_token);
+        refreshTokenRef.current = tokens.refresh_token;
+        localStorage.setItem('ck_refresh_token', tokens.refresh_token);
+        ck_setCookie('ck_refresh_token', tokens.refresh_token, 30);
+        setIsAuthenticated(true);
+        scheduleRefresh(tokens.refresh_token);
       } catch (e) {
-        // §7 reuse detection / expiry → force redirect to Login (§8)
-        clearSession();
+        // Only hard-logout on auth failures — not network blips
+        const fatal =
+          e?.status === 401 ||
+          e?.code === 'unauthorized' ||
+          e?.code === 'refresh_token_reuse' ||
+          e?.code === 'RefreshTokenReuseDetected';
+        if (fatal) {
+          clearSession();
+        } else {
+          // Retry once later (server waking / network)
+          refreshTimer.current = setTimeout(() => {
+            const rt = refreshTokenRef.current;
+            if (rt) scheduleRefresh(rt);
+          }, 30_000);
+        }
       }
     }, ACCESS_TOKEN_TTL_MS - REFRESH_MARGIN_MS);
-  }, [clearSession, setSession]);
+  }, [clearSession]);
 
-  // On mount, attempt silent refresh if a refresh token was persisted.
+  const setSession = useCallback((tokens) => {
+    setAccessToken(tokens.access_token);
+    setCurrentAccessToken(tokens.access_token);
+    setRefreshToken(tokens.refresh_token);
+    refreshTokenRef.current = tokens.refresh_token;
+    localStorage.setItem('ck_refresh_token', tokens.refresh_token);
+    ck_setCookie('ck_refresh_token', tokens.refresh_token, 30);
+    setIsAuthenticated(true);
+    scheduleRefresh(tokens.refresh_token);
+    refreshUser();
+  }, [refreshUser, scheduleRefresh]);
+
+  // Mount: silent restore
   useEffect(() => {
-    if (refreshToken && !accessToken) {
-      authApi.refresh(refreshToken).then(setSession).catch(clearSession);
+    const rt = loadRefreshToken();
+    if (!rt) {
+      setBootstrapping(false);
+      return;
     }
+    let cancelled = false;
+    authApi
+      .refresh(rt)
+      .then((tokens) => {
+        if (!cancelled) setSession(tokens);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        const fatal =
+          e?.status === 401 ||
+          e?.code === 'unauthorized' ||
+          e?.code === 'refresh_token_reuse';
+        if (fatal) clearSession();
+        // network error: keep cookie, user can retry navigation
+      })
+      .finally(() => {
+        if (!cancelled) setBootstrapping(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,7 +149,18 @@ export function AuthProvider({ children }) {
   }, [accessToken, clearSession]);
 
   return (
-    <AuthContext.Provider value={{ accessToken, isAuthenticated, user, refreshUser, setSession, clearSession, logout }}>
+    <AuthContext.Provider
+      value={{
+        accessToken,
+        isAuthenticated,
+        user,
+        refreshUser,
+        setSession,
+        clearSession,
+        logout,
+        bootstrapping,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

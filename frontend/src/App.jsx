@@ -33,7 +33,14 @@ import './styles/tokens.css';
  * re-validates the JWT on every request regardless of what this shows.
  */
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, bootstrapping } = useAuth();
+  if (bootstrapping) {
+    return (
+      <div style={{ minHeight: '100dvh', background: '#0F1115', color: '#D4AF37', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        ♚ Loading…
+      </div>
+    );
+  }
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
   return children;
 }
