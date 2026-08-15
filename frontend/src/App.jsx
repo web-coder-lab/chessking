@@ -4,6 +4,7 @@ import Splash from './pages/splash/Splash';
 import AuthScreen from './pages/auth/AuthScreen';
 import ResetPasswordScreen from './pages/auth/ResetPasswordScreen';
 import CompleteSignup from './pages/auth/CompleteSignup';
+import VerifyEmail from './pages/auth/VerifyEmail';
 import Dashboard from './pages/dashboard/Dashboard';
 import WalletScreen from './pages/wallet/Wallet';
 import Checkout from './pages/wallet/Checkout';
@@ -58,6 +59,7 @@ function AppRoutes() {
       <Route path="/auth" element={<AuthScreen />} />
       <Route path="/reset-password" element={<ResetPasswordScreen />} />
       <Route path="/complete-signup" element={<CompleteSignup />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard user={user} refreshUser={refreshUser} /></ProtectedRoute>} />
       <Route path="/wallet" element={<ProtectedRoute><WalletScreen user={user} /></ProtectedRoute>} />
