@@ -23,22 +23,55 @@ export default function Dashboard({ user, refreshUser }) {
 
   useEffect(() => {
     if (!user?.username) return;
-    socialApi.getDailyRewardStatus().then((s) => setDailyReward({
-      claimedToday: s.claimed_today,
-      streakDay: s.current_streak_day,
-      coins: s.next_reward_coins,
-    }));
-    socialApi.getMatchHistory(user.username, 3).then((d) => setRecentMatches(d.matches));
-  }, [user?.username]);
+    function loadDaily() {
+      socialApi.getDailyRewardStatus().then((s) => setDailyReward({
+        claimedToday: s.claimed_today,
+        streakDay: s.current_streak_day,
+        coins: s.next_reward_coins,
+      })).catch(() => {});
+    }
+    loadDaily();
+    socialApi.getMatchHistory(user.username, 3).then((d) => setRecentMatches(d.matches || [])).catch(() => {});
+    // Part 13: when tab focuses again, re-sync coins + claim state from server
+    function onVis() {
+      if (document.visibilityState === 'visible') {
+        loadDaily();
+        refreshUser?.();
+      }
+    }
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [user?.username, refreshUser]);
 
   async function handleClaim() {
     setClaiming(true);
     try {
       const resp = await socialApi.claimDailyReward();
-      setDailyReward((d) => (d ? { ...d, claimedToday: true, streakDay: resp.new_streak_day } : d));
-      refreshUser?.(); // pulls the updated coin_balance into TopBar app-wide
+      setDailyReward((d) =>
+        d
+          ? { ...d, claimedToday: true, streakDay: resp.new_streak_day ?? d.streakDay }
+          : { claimedToday: true, streakDay: resp.new_streak_day ?? 1, coins: 0 }
+      );
+      setToast({
+        message: resp.coins_awarded
+          ? `+${resp.coins_awarded} coins claimed`
+          : 'Reward claimed',
+      });
+      await refreshUser?.();
+      // Re-fetch status so claimed_today stays true after soft refresh
+      const s = await socialApi.getDailyRewardStatus();
+      setDailyReward({
+        claimedToday: s.claimed_today,
+        streakDay: s.current_streak_day,
+        coins: s.next_reward_coins,
+      });
     } catch (e) {
-      setToast({ message: e.message || 'Could not claim reward' });
+      if (e.code === 'already_claimed') {
+        setDailyReward((d) => (d ? { ...d, claimedToday: true } : d));
+        setToast({ message: 'Already claimed today' });
+      } else {
+        setToast({ message: e.message || 'Could not claim reward' });
+      }
     } finally {
       setClaiming(false);
     }
