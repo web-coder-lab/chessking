@@ -4,6 +4,7 @@ pub mod password;
 pub mod jwt;
 pub mod session;
 pub mod register;
+pub mod register_intent;
 pub mod login;
 pub mod two_fa;
 pub mod forgot_password;
@@ -389,8 +390,27 @@ async fn revoke_session_handler(State(state): State<AppState>, Extension(claims)
     Ok(Json(json!({ "status": "revoked" })))
 }
 
+
+// ---------------------------------------------------------
+// POST /auth/register-intent  (Part 10: email only → complete-signup link)
+// ---------------------------------------------------------
+async fn register_intent_handler(
+    State(state): State<AppState>,
+    Json(req): Json<register_intent::RegisterIntentRequest>,
+) -> Result<Json<register_intent::RegisterIntentResponse>, AuthError> {
+    let resp = register_intent::create_intent(
+        &state.email,
+        &state.config.frontend_base_url,
+        state.github_store.as_deref(),
+        req,
+    )
+    .await?;
+    Ok(Json(resp))
+}
+
 pub fn public_routes() -> Router<AppState> {
     Router::new()
+        .route("/auth/register-intent", post(register_intent_handler))
         .route("/auth/register", post(register_handler))
         .route("/auth/verify-email", post(verify_email_handler))
         .route("/auth/resend-verification", post(resend_verification_handler))
