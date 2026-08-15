@@ -82,6 +82,20 @@ impl EmailClient {
         self.send(to, "Verify your Genius Clan account", html).await
     }
 
+    /// Part 9–11: user only entered email on the site; this link opens
+    /// the Complete Signup page to set username + password, then account
+    /// is created and they are logged in.
+    pub async fn send_complete_signup_email(&self, to: &str, token: &str, deep_link_base: &str) -> Result<(), AuthError> {
+        let link = format!("{deep_link_base}/complete-signup?token={token}");
+        let html = shell(
+            GOLD, "&#9812;",
+            "Finish creating your account",
+            "Choose your username and password on the next page. This link expires in 30 minutes.",
+            Some(("Complete signup", &link)),
+        );
+        self.send(to, "Complete your Genius Clan signup", html).await
+    }
+
     /// Sent right after verify-email succeeds — nothing sent this before
     /// (verification existed, but nothing welcomed the new player in).
     pub async fn send_welcome_email(&self, to: &str, username: &str, deep_link_base: &str) -> Result<(), AuthError> {
