@@ -29,8 +29,9 @@ export default function Splash() {
 
   return (
     <div className="ck-splash">
-      <div className="ck-splash__logo">♔</div>
-      <h1 className="page-title" style={{ marginBottom: 'var(--space-6)' }}>Genius Clan</h1>
+      <div className="ck-splash__logo">♚</div>
+      <p className="ck-splash__tag">Multiplayer Chess</p>
+      <h1 className="ck-splash__title">Genius Clan</h1>
 
       <div className="ck-splash__lang-list">
         {LANGUAGES.map((lang) => (

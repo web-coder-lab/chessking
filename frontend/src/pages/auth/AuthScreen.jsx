@@ -21,6 +21,7 @@ export default function AuthScreen() {
 
   return (
     <div className="ck-auth-screen">
+      <p className="ck-auth-brand">Genius Clan</p>
       <div className="ck-auth-illustration" aria-hidden="true">♔</div>
 
       <div className="ck-auth-tabs" role="tablist">

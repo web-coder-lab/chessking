@@ -50,13 +50,11 @@ export default function CompleteSignup() {
   }
 
   return (
-    <div className="ck-auth" style={{ minHeight: '100dvh', padding: 24, background: '#0F1115' }}>
-      <div style={{ maxWidth: 400, margin: '40px auto' }}>
-        <p style={{ color: '#D4AF37', letterSpacing: 3, textTransform: 'uppercase', fontSize: 12, textAlign: 'center' }}>
-          ♚ Genius Clan
-        </p>
-        <h1 style={{ color: '#F5F5F5', textAlign: 'center', marginBottom: 8 }}>Complete signup</h1>
-        <p style={{ color: '#9CA3AF', textAlign: 'center', marginBottom: 24, fontSize: 14 }}>
+    <div className="ck-auth-screen">
+      <div style={{ maxWidth: 400, margin: '0 auto', width: '100%' }}>
+        <p className="ck-auth-brand">♚ Genius Clan</p>
+        <h1 className="page-title" style={{ textAlign: 'center', marginBottom: 8 }}>Complete signup</h1>
+        <p className="text-secondary" style={{ textAlign: 'center', marginBottom: 24 }}>
           Choose a username and password to finish.
         </p>
         <form onSubmit={handleSubmit}>
