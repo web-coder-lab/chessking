@@ -1,5 +1,6 @@
 .ck-play {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: 84px;
 }
@@ -24,7 +25,8 @@
 
 /* Full-screen states: searching, VS transition */
 .ck-play-fullscreen {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -96,5 +98,20 @@
   font-family: var(--font-display);
   font-size: 24px;
   font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.ck-play__option-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent-gold);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+}
+.ck-play-fullscreen {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+.ck-play-radar {
   color: var(--accent-gold);
 }

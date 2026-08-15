@@ -1,5 +1,6 @@
 .ck-dashboard {
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--bg-primary);
   padding-top: calc(var(--topbar-height) + var(--space-4));
   padding-bottom: 84px; /* clears bottom nav */
 }
@@ -32,7 +33,12 @@
   padding: var(--space-2) var(--space-4);
   font-weight: var(--text-button-weight);
   font-size: var(--text-caption-size);
+  font-family: var(--font-body);
   cursor: pointer;
+  transition: transform var(--transition-standard);
+}
+.ck-dashboard__claim-btn:active {
+  transform: scale(var(--pressed-scale));
 }
 
 /* §2.3 item 2: central Play button — pulsing glow, 2.5s loop */
@@ -154,4 +160,18 @@
 .ck-dashboard__result-badge--draw {
   background: rgba(156, 163, 175, 0.15);
   color: var(--text-secondary);
+}
+
+.ck-dashboard__play-button {
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 0 24px rgba(212, 175, 55, 0.25);
+}
+.ck-dashboard__shortcut-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  transition: border-color var(--transition-standard), transform var(--transition-standard);
+}
+.ck-dashboard__shortcut-card:active {
+  border-color: var(--accent-gold-border);
+  transform: scale(var(--pressed-scale));
 }
