@@ -1,14 +1,20 @@
-# Genius Clan API — multi-stage (Render free tier)
+# Genius Clan API — low-memory Docker build for Render free tier
 FROM rust:1.97-bookworm AS builder
 WORKDIR /app
 
-# sqlx::migrate!("../database/migrations") → /database/migrations
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY database /database
-COPY backend/Cargo.toml backend/Cargo.lock* ./
+COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
 
-# Release binary
-RUN cargo build --release
+# Single job to reduce peak RAM (free-tier OOM → exit 1)
+ENV CARGO_BUILD_JOBS=1
+ENV CARGO_TERM_COLOR=always
+RUN cargo build --release -j 1 \
+ && strip target/release/chess-king-backend || true
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
