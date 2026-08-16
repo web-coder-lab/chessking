@@ -10,7 +10,10 @@ export default function Card({ children, glass = false, className = '', onClick,
     <div
       className={`ck-card ${glass ? 'ck-card--glass' : ''} ${className}`.trim()}
       onClick={onClick}
-      style={style}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); } } : undefined}
+      style={{ ...(style || {}), cursor: onClick ? 'pointer' : style?.cursor }}
     >
       {children}
     </div>

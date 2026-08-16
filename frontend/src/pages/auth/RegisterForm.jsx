@@ -26,8 +26,11 @@ export default function RegisterForm() {
     setLoading(true);
     try {
       const resp = await authApi.register(username, email, password);
-      if (resp.status === 'verify_email' || resp.status === 'verify_email_sent') {
+      if (resp.status === 'verify_email' || resp.status === 'verify_email_sent' || resp.status === 'verify_email_pending') {
         setVerifyState(true);
+        if (resp.email_sent === false) {
+          setErrors({ form: resp.message || 'Account created but email could not be sent. Try logging in.' });
+        }
       }
     } catch (err) {
       // Doc 3 §2.4 exact error messages, mapped to the field they concern

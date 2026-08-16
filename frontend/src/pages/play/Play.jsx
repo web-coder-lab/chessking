@@ -24,6 +24,10 @@ export default function Play({ user }) {
   }, []);
 
   async function startQuickMatch(matchType) {
+    if (!accessToken) {
+      navigate('/auth', { replace: true });
+      return;
+    }
     setPhase('searching');
     setElapsed(0);
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);

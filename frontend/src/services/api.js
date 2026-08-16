@@ -224,7 +224,7 @@ export const inventoryApi = {
 };
 
 export const giftsApi = {
-  getCatalog: () => request('/gifts/catalog'),
+  getCatalog: () => request('/gifts/catalog', { headers: authHeaders() }),
 
   send: (receiverUsername, shopItemId, context, matchId) =>
     request('/gifts/send', {
