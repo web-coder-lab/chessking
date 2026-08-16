@@ -12,6 +12,30 @@ export function setCurrentAccessToken(token) {
   currentAccessToken = token;
 }
 
+
+/** User-facing copy for known API / network codes */
+export function friendlyError(err) {
+  const code = err?.code || '';
+  const status = err?.status;
+  const map = {
+    network_error: 'Server unreachable. Wait a few seconds (free server may be waking up) and try again.',
+    email_send_failed: 'Email could not be sent. Check your inbox later or try Resend.',
+    invalid_credentials: 'Wrong username/email or password.',
+    username_taken: 'This username is already taken.',
+    email_taken: 'This email is already registered.',
+    username_invalid: 'Username must be 3–20 letters, numbers, or underscore.',
+    password_weak: 'Password is too weak. Use a stronger one.',
+    rate_limited: 'Too many tries. Wait a minute and try again.',
+    unauthorized: 'Session expired. Please sign in again.',
+    already_claimed: 'Already claimed today.',
+    insufficient_coins: 'Not enough coins.',
+  };
+  if (map[code]) return map[code];
+  if (status === 429) return map.rate_limited;
+  if (status === 502 || status === 503) return 'Server is busy or waking up. Try again in a moment.';
+  return err?.message || 'Something went wrong. Please try again.';
+}
+
 function authHeaders() {
   return currentAccessToken ? { Authorization: `Bearer ${currentAccessToken}` } : {};
 }
@@ -39,14 +63,16 @@ async function request(path, options = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const msg =
+    const code = (data.error && data.error.code) || data.code || 'error';
+    const raw =
       (data.error && typeof data.error === 'object' && data.error.message) ||
       (typeof data.error === 'string' ? data.error : null) ||
       data.message ||
-      'Something went wrong.';
-    const err = new Error(msg);
-    err.code = (data.error && data.error.code) || data.code || 'error';
+      '';
+    const err = new Error(raw || 'Something went wrong.');
+    err.code = code;
     err.status = res.status;
+    err.message = friendlyError(err);
     throw err;
   }
   return data;
