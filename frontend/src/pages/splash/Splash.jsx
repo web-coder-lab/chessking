@@ -13,8 +13,12 @@ export default function Splash() {
 
   useEffect(() => {
     const saved = localStorage.getItem('ck_language');
+    const hasSession =
+      localStorage.getItem('ck_refresh_token') ||
+      document.cookie.includes('ck_refresh_token=');
     if (saved) {
-      navigate('/auth', { replace: true });
+      // Part 23: returning users with a session go through auth bootstrap → dashboard
+      navigate(hasSession ? '/dashboard' : '/auth', { replace: true });
       return;
     }
     setVisible(true);

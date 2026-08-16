@@ -118,7 +118,7 @@ export const authApi = {
     request(`/auth/login/device-approval-status/${pendingId}`),
 
   refresh: (refreshToken) =>
-    request('/auth/refresh', { method: 'POST', body: JSON.stringify({ refresh_token: refreshToken }) }),
+    request('/auth/refresh', { method: 'POST', skipAuth: true, body: JSON.stringify({ refresh_token: refreshToken }) }),
 
   logout: (accessToken) =>
     request('/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } }),

@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import ForgotForm from './ForgotForm';
+import { useAuth } from '../../context/AuthContext';
 import './Auth.css';
 
-/**
- * Doc 4 §2.2: chess piece illustration top, three-tab switcher
- * (Login/Register/Forgot), active tab underlined in gold.
- * Reset Password is a SEPARATE screen, reached only via emailed link —
- * not part of this tab switcher (see ResetPasswordScreen.jsx).
- */
 const TABS = [
   { key: 'login', label: 'Login' },
   { key: 'register', label: 'Register' },
@@ -18,6 +14,24 @@ const TABS = [
 
 export default function AuthScreen() {
   const [tab, setTab] = useState('login');
+  const { isAuthenticated, bootstrapping } = useAuth();
+  const navigate = useNavigate();
+
+  // Part 23: already logged-in users shouldn't sit on auth after refresh
+  useEffect(() => {
+    if (!bootstrapping && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [bootstrapping, isAuthenticated, navigate]);
+
+  if (bootstrapping) {
+    return (
+      <div className="ck-auth-screen" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <p className="ck-auth-brand">♚ Genius Clan</p>
+        <p className="text-secondary">Restoring session…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="ck-auth-screen">
