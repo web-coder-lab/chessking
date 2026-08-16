@@ -127,6 +127,9 @@ async fn wait_for_match(state: &AppState, user_id: &str, match_type: &str) -> Op
     let (tx, mut rx) = mpsc::channel(1);
     let rating = get_rating(state, user_id).await;
 
+    // Remove any prior queue entry for this user (re-queue / cancel)
+    state.matchmaking.leave(user_id).await;
+
     state.matchmaking.join(match_type, QueuedPlayer {
         user_id: user_id.to_string(),
         rating,
@@ -134,7 +137,18 @@ async fn wait_for_match(state: &AppState, user_id: &str, match_type: &str) -> Op
         notify: tx,
     }).await;
 
-    let (match_id, opponent_id, is_initiator) = rx.recv().await?;
+    // Cap queue wait; FE also cancels by closing the socket (server cleans via timeout).
+    let recv = tokio::time::timeout(std::time::Duration::from_secs(180), rx.recv()).await;
+    let Some((match_id, opponent_id, is_initiator)) = (match recv {
+        Ok(Some(v)) => Some(v),
+        _ => {
+            state.matchmaking.leave(user_id).await;
+            return None;
+        }
+    }) else {
+        state.matchmaking.leave(user_id).await;
+        return None;
+    };
 
     // Doc 7 §2 step 4a-b: create the matches row, randomly assign white/
     // black. Only the initiator persists — the other side waits briefly

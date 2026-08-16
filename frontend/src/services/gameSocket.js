@@ -6,9 +6,7 @@ const WS_BASE = (
 ) + '/api/v1';
 
 /**
- * Thin wrapper around the backend's match WebSocket (game/websocket.rs).
- * One connection handles queueing, move play, and WebRTC signal relay via
- * a `type` field in each message (see backend for the full protocol).
+ * Match WebSocket — queue + in-match moves.
  */
 export class GameSocket {
   constructor(accessToken) {
@@ -18,19 +16,62 @@ export class GameSocket {
   }
 
   connect(path = '/match/queue') {
-    this.ws = new WebSocket(`${WS_BASE}${path}?token=${this.accessToken}`);
-    this.ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        this._emit(msg.type, msg);
-      } catch {
-        // ignore malformed frames
+    return new Promise((resolve, reject) => {
+      if (!this.accessToken) {
+        reject(new Error('Not signed in. Please log in again.'));
+        return;
       }
-    };
-    this.ws.onclose = () => this._emit('__closed', {});
-    this.ws.onerror = () => this._emit('__error', {});
-    return new Promise((resolve) => {
-      this.ws.onopen = () => resolve();
+      const url = `${WS_BASE}${path}?token=${encodeURIComponent(this.accessToken)}`;
+      let settled = false;
+      try {
+        this.ws = new WebSocket(url);
+      } catch (e) {
+        reject(new Error('Could not open matchmaking connection.'));
+        return;
+      }
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        try { this.ws.close(); } catch (_) {}
+        reject(new Error('Matchmaking connection timed out. Server may be waking up — try again.'));
+      }, 20000);
+
+      this.ws.onopen = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      };
+
+      this.ws.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error('Matchmaking failed to connect. Check login and try again.'));
+      };
+
+      this.ws.onclose = (ev) => {
+        clearTimeout(timer);
+        this._emit('__closed', { code: ev.code, reason: ev.reason });
+        if (!settled) {
+          settled = true;
+          reject(new Error(
+            ev.code === 1006
+              ? 'Connection closed. Server may be down or token expired — log in again.'
+              : `Connection closed (${ev.code}).`
+          ));
+        }
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          this._emit(msg.type, msg);
+        } catch {
+          // ignore
+        }
+      };
     });
   }
 
@@ -39,8 +80,15 @@ export class GameSocket {
     this.listeners[type].push(callback);
   }
 
+  off(type, callback) {
+    if (!this.listeners[type]) return;
+    this.listeners[type] = this.listeners[type].filter((cb) => cb !== callback);
+  }
+
   _emit(type, payload) {
-    (this.listeners[type] || []).forEach((cb) => cb(payload));
+    (this.listeners[type] || []).forEach((cb) => {
+      try { cb(payload); } catch (_) {}
+    });
   }
 
   send(message) {
@@ -70,6 +118,9 @@ export class GameSocket {
   }
 
   close() {
-    this.ws?.close();
+    try {
+      if (this.ws && this.ws.readyState <= 1) this.ws.close();
+    } catch (_) {}
+    this.ws = null;
   }
 }

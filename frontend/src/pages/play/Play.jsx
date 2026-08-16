@@ -8,63 +8,117 @@ import { useAuth } from '../../context/AuthContext';
 import { GameSocket } from '../../services/gameSocket';
 import './Play.css';
 
+const SEARCH_TIMEOUT_MS = 90_000;
+
 export default function Play({ user }) {
   const navigate = useNavigate();
   const { accessToken } = useAuth();
-  const [phase, setPhase] = useState('choose'); // choose | searching | found
+  const [phase, setPhase] = useState('choose'); // choose | searching | found | error
   const [elapsed, setElapsed] = useState(0);
   const [matchInfo, setMatchInfo] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
   const socketRef = useRef(null);
   const timerRef = useRef(null);
-  const handoffRef = useRef(false); // true once ChessBoard is taking over the live socket
+  const searchTimeoutRef = useRef(null);
+  const handoffRef = useRef(false);
 
   useEffect(() => () => {
     clearInterval(timerRef.current);
+    clearTimeout(searchTimeoutRef.current);
     if (!handoffRef.current) socketRef.current?.close();
   }, []);
+
+  function resetToChoose(msg) {
+    clearInterval(timerRef.current);
+    clearTimeout(searchTimeoutRef.current);
+    if (!handoffRef.current) socketRef.current?.close();
+    socketRef.current = null;
+    setPhase(msg ? 'error' : 'choose');
+    setErrorMsg(msg || '');
+    setElapsed(0);
+    setMatchInfo(null);
+  }
 
   async function startQuickMatch(matchType) {
     if (!accessToken) {
       navigate('/auth', { replace: true });
       return;
     }
+
+    setErrorMsg('');
     setPhase('searching');
     setElapsed(0);
+    clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
 
-    const socket = new GameSocket(accessToken);
-    socketRef.current = socket;
-    await socket.connect('/match/queue');
+    clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      resetToChoose('No opponent found yet. Try again — or invite a friend (Custom Match).');
+    }, SEARCH_TIMEOUT_MS);
 
-    socket.on('match_found', (msg) => {
-      clearInterval(timerRef.current);
-      setMatchInfo(msg);
-      setPhase('found');
-      setTimeout(() => {
-        handoffRef.current = true; // ChessBoard reuses this same connection — don't close it on unmount
-        navigate(`/board/${msg.match_id}`, { state: { socket, color: msg.color } });
-      }, 1500);
-    });
+    try {
+      const socket = new GameSocket(accessToken);
+      socketRef.current = socket;
+      await socket.connect('/match/queue');
 
-    socket.joinQueue(matchType);
+      socket.on('match_found', (msg) => {
+        clearInterval(timerRef.current);
+        clearTimeout(searchTimeoutRef.current);
+        setMatchInfo(msg);
+        setPhase('found');
+        setTimeout(() => {
+          handoffRef.current = true;
+          navigate(`/board/${msg.match_id}`, {
+            state: {
+              socket,
+              color: msg.color,
+              opponentId: msg.opponent_id,
+            },
+          });
+        }, 1200);
+      });
+
+      socket.on('error', (msg) => {
+        resetToChoose(msg.message || 'Matchmaking error');
+      });
+
+      socket.on('__closed', () => {
+        // If we already found a match and handed off, ignore
+        if (handoffRef.current) return;
+        // Still searching → connection died
+        setPhase((p) => {
+          if (p === 'searching') {
+            clearInterval(timerRef.current);
+            clearTimeout(searchTimeoutRef.current);
+            setErrorMsg('Connection lost while searching. Try again.');
+            return 'error';
+          }
+          return p;
+        });
+      });
+
+      socket.joinQueue(matchType);
+    } catch (e) {
+      resetToChoose(e.message || 'Could not start matchmaking');
+    }
   }
 
   function cancelSearch() {
-    clearInterval(timerRef.current);
-    socketRef.current?.close();
-    setPhase('choose');
+    handoffRef.current = false;
+    resetToChoose('');
   }
 
   if (phase === 'searching') {
     return (
       <div className="ck-play-fullscreen">
-        <div className="ck-play-radar" aria-hidden="true">
-          <span className="ck-play-radar-ring" />
-          <span className="ck-play-radar-ring" />
-          <span className="ck-play-knight">♞</span>
-        </div>
-        <p className="page-title" style={{ marginTop: 'var(--space-6)' }}>Finding an opponent...</p>
-        <p className="text-secondary tabular-nums">{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}</p>
+        <div className="ck-play-radar" aria-hidden>♞</div>
+        <h1 className="page-title">Searching…</h1>
+        <p className="text-secondary" style={{ marginTop: 8 }}>
+          Looking for an opponent · {elapsed}s
+        </p>
+        <p className="text-secondary" style={{ marginTop: 8, fontSize: 13, maxWidth: 280 }}>
+          Needs another online player. On free server only you may be online — try Custom Match or open a second account.
+        </p>
         <Button variant="outline" onClick={cancelSearch} style={{ marginTop: 'var(--space-8)' }}>
           Cancel
         </Button>
@@ -75,17 +129,19 @@ export default function Play({ user }) {
   if (phase === 'found' && matchInfo) {
     return (
       <div className="ck-play-fullscreen">
-        <div className="ck-vs-card">
+        <h1 className="page-title">Match found!</h1>
+        <div className="ck-vs-row" style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center' }}>
           <div className="ck-vs-player">
-            <img src={user?.avatarUrl} alt="" className="ck-vs-avatar" />
-            <span>{user?.username}</span>
+            <span style={{ fontSize: 40 }}>👤</span>
+            <span>{user?.username || 'You'}</span>
           </div>
           <span className="ck-vs-label">VS</span>
           <div className="ck-vs-player">
-            <img src={matchInfo.opponent_avatar_url} alt="" className="ck-vs-avatar" />
+            <span style={{ fontSize: 40 }}>👤</span>
             <span>{matchInfo.opponent_username || 'Opponent'}</span>
           </div>
         </div>
+        <p className="text-secondary" style={{ marginTop: 12 }}>You play as {matchInfo.color}</p>
       </div>
     );
   }
@@ -96,6 +152,10 @@ export default function Play({ user }) {
 
       <main className="ck-play__body">
         <h1 className="page-title" style={{ marginBottom: 'var(--space-4)' }}>Play</h1>
+
+        {phase === 'error' && errorMsg && (
+          <p style={{ color: 'var(--danger-red)', marginBottom: 16, fontSize: 14 }}>{errorMsg}</p>
+        )}
 
         <Card className="ck-play__option-card" onClick={() => startQuickMatch('ranked')}>
           <span className="ck-play__option-icon" aria-hidden="true">⚡</span>

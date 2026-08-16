@@ -44,14 +44,20 @@ impl MatchmakingQueue {
         let queue = if match_type == "ranked" { &self.ranked } else { &self.casual };
         let mut guard = queue.lock().await;
 
+        // Drop zombie queue entries (socket already closed)
+        guard.retain(|other| !other.notify.is_closed());
+
         let match_index = if match_type == "ranked" {
             guard.iter().position(|other| {
+                if other.user_id == player.user_id {
+                    return false;
+                }
                 let band = current_band(other.joined_at);
                 (other.rating - player.rating).abs() <= band
             })
         } else {
-            // Doc 7 Sec2 step 3c: casual matches on availability alone.
-            if guard.is_empty() { None } else { Some(0) }
+            // Casual: first non-self waiting player
+            guard.iter().position(|other| other.user_id != player.user_id)
         };
 
         if let Some(idx) = match_index {
@@ -60,6 +66,14 @@ impl MatchmakingQueue {
             pair_players(player, opponent).await;
         } else {
             guard.push_back(player);
+        }
+    }
+
+    /// Remove a waiting player (socket closed / cancel search).
+    pub async fn leave(&self, user_id: &str) {
+        for q in [&self.ranked, &self.casual] {
+            let mut guard = q.lock().await;
+            guard.retain(|p| p.user_id != user_id);
         }
     }
 
