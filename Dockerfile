@@ -1,17 +1,14 @@
-# Genius Clan API — multi-stage build (Render free tier)
+# Genius Clan API — multi-stage (Render free tier)
 FROM rust:1.97-bookworm AS builder
 WORKDIR /app
 
-# Migrations path: sqlx::migrate!("../database/migrations") from Cargo.toml dir
+# sqlx::migrate!("../database/migrations") → /database/migrations
 COPY database /database
 COPY backend/Cargo.toml backend/Cargo.lock* ./
-RUN mkdir src && echo "fn main() {}" > src/main.rs \
-    && cargo build --release \
-    && rm -rf src \
-    && find target/release -name 'chess-king*' -delete 2>/dev/null || true
-
 COPY backend/src ./src
-RUN touch src/main.rs && cargo build --release
+
+# Release binary
+RUN cargo build --release
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,5 +22,4 @@ COPY --from=builder /app/target/release/chess-king-backend /app/server
 ENV PORT=8080
 ENV DATABASE_URL=sqlite:///data/genius_clan.db
 EXPOSE 8080
-
 CMD ["/app/server"]
