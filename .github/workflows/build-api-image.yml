@@ -38,3 +38,18 @@ jobs:
           tags: |
             ${{ env.IMAGE }}:latest
             ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Make package public (Render can pull)
+        run: |
+          # Ignore errors if already public or API shape differs
+          curl -sS -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/user/packages/container/genius-clan-api/visibility" \
+            -d '{"visibility":"public"}' || true
+          curl -sS -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/orgs/web-coder-lab/packages/container/genius-clan-api/visibility" \
+            -d '{"visibility":"public"}' || true
