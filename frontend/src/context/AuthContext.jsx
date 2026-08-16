@@ -117,6 +117,7 @@ export function AuthProvider({ children }) {
       return;
     }
     let cancelled = false;
+    const safety = setTimeout(() => { if (!cancelled) setBootstrapping(false); }, 10000);
     authApi
       .refresh(rt)
       .then((tokens) => {
@@ -132,10 +133,10 @@ export function AuthProvider({ children }) {
         // network error: keep cookie, user can retry navigation
       })
       .finally(() => {
-        if (!cancelled) setBootstrapping(false);
+        if (!cancelled) { clearTimeout(safety); setBootstrapping(false); }
       });
     return () => {
-      cancelled = true;
+      cancelled = true; clearTimeout(safety);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

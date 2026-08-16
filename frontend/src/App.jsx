@@ -26,6 +26,7 @@ import InviteFriend from './pages/invite/InviteFriend';
 import CustomMatch from './pages/custom-match/CustomMatch';
 import NotificationsDrawer from './components/notifications/NotificationsDrawer';
 import NotFound from './pages/not-found/NotFound';
+import ErrorBoundary from './components/ErrorBoundary';
 import './styles/tokens.css';
 
 /**
@@ -91,10 +92,12 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
