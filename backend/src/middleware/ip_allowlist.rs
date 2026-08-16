@@ -102,7 +102,7 @@ pub async fn enforce_ip_allowlist(
 
     let path = req.uri().path();
     // Health always open so Render can probe
-    if path == "/health" || path == "/health/store" {
+    if path == "/health" || path == "/health/store" || path == "/health/email" {
         return next.run(req).await;
     }
 
