@@ -32,17 +32,19 @@ export default function Inventory({ user, refreshUser }) {
   const visible = items.filter((i) => i.category === category);
 
   async function handleToggleEquip(item) {
-    // §2.2: equipping auto-unequips the previous item in the same
-    // category — UI reflects this instantly.
-    await inventoryApi.equip(item.inventory_id);
-    await refreshUser?.();
-    setItems((prev) =>
-      prev.map((i) => {
-        if (i.category !== item.category) return i;
-        return { ...i, is_equipped: i.inventory_id === item.inventory_id ? 1 : 0 };
-      })
-    );
-    setSheetItem(null);
+    try {
+      await inventoryApi.equip(item.inventory_id);
+      await refreshUser?.();
+      setItems((prev) =>
+        prev.map((i) => {
+          if (i.category !== item.category) return i;
+          return { ...i, is_equipped: i.inventory_id === item.inventory_id ? 1 : 0 };
+        })
+      );
+      setSheetItem(null);
+    } catch (e) {
+      alert(e.message || 'Could not equip item');
+    }
   }
 
   return (
