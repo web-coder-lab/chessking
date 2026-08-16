@@ -36,9 +36,9 @@ pub async fn daily_status(
     ).bind(user_id).fetch_optional(pool).await?;
 
     let yesterday = (Utc::now() - chrono::Duration::days(1)).format("%Y-%m-%d").to_string();
-    let mut current_streak_day = match last {
-        Some((day, date)) if date == today => day,
-        Some((day, date)) if date == yesterday => (day % 7) + 1,
+    let mut current_streak_day = match &last {
+        Some((day, date)) if date == &today => *day,
+        Some((day, date)) if date == &yesterday => (day % 7) + 1,
         _ => 1,
     };
     // Durable streak if SQL empty
