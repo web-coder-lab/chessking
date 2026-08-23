@@ -264,6 +264,9 @@ async fn ensure_session_loaded(state: &AppState, match_id: &str) {
                 black_ms: DEFAULT_CLOCK_MS,
                 turn_started_at: Instant::now(),
                 pending_draw_from: None,
+                white_move_times_ms: std::collections::VecDeque::new(),
+                black_move_times_ms: std::collections::VecDeque::new(),
+                ply_count: 0,
             },
         )
         .await;
@@ -342,6 +345,9 @@ async fn register_in_memory(state: &AppState, match_id: &str, white_id: &str, bl
         black_ms: DEFAULT_CLOCK_MS,
         turn_started_at: Instant::now(),
         pending_draw_from: None,
+        white_move_times_ms: std::collections::VecDeque::new(),
+        black_move_times_ms: std::collections::VecDeque::new(),
+        ply_count: 0,
     }).await;
 }
 
@@ -411,8 +417,8 @@ async fn handle_move(
         return;
     }
 
-    // Phase 5: apply elapsed time to the side about to move
-    let flagged = state
+    // Phase 5+9: tick clock and capture think time for anti-cheat
+    let tick = state
         .match_registry
         .with_session(match_id, |s| {
             let white_tm = s.game.side_to_move() == shakmaty::Color::White;
@@ -420,7 +426,9 @@ async fn handle_move(
         })
         .await;
 
-    if flagged == Some(true) {
+    let (flagged, think_ms) = tick.unwrap_or((false, 0));
+
+    if flagged {
         let info = state
             .match_registry
             .with_session(match_id, |s| {
@@ -473,7 +481,31 @@ async fn handle_move(
 
     match move_result {
         Some(Ok(())) => {
-            let _ = state.match_registry.with_session(match_id, |s| s.start_opponent_clock()).await;
+            let anomaly = state
+                .match_registry
+                .with_session(match_id, |s| {
+                    let anomaly = s.record_think_time(is_white, think_ms);
+                    s.start_opponent_clock();
+                    anomaly
+                })
+                .await
+                .unwrap_or(false);
+            if anomaly {
+                // Log only — full pause needs 2 independent signals (Doc 8)
+                let _ = crate::anticheat::risk_score::record_event(
+                    &state.db,
+                    user_id,
+                    "impossible_move_timing",
+                    serde_json::json!({
+                        "match_id": match_id,
+                        "think_ms": think_ms,
+                        "ply": "streak"
+                    }),
+                    None,
+                    None,
+                )
+                .await;
+            }
         }
         _ => {
             // Illegal: board unchanged. Clock already deducted for think time (chess.com-like).
