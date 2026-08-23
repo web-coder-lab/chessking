@@ -76,8 +76,14 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: String) {
 
     let opponent_id = { get_opponent_id(&state, &match_id, is_white).await };
     let color = if is_white { "white" } else { "black" };
+    let opponent_username = get_username(&state, &opponent_id).await;
     let _ = sender.send(Message::Text(json!({
-        "type": "match_found", "match_id": match_id, "color": color, "opponent_id": opponent_id, "is_initiator": is_initiator
+        "type": "match_found",
+        "match_id": match_id,
+        "color": color,
+        "opponent_id": opponent_id,
+        "opponent_username": opponent_username,
+        "is_initiator": is_initiator
     }).to_string())).await;
 
     let mut events_rx = match state.match_registry.subscribe(&match_id).await {
@@ -156,17 +162,26 @@ async fn wait_for_match(state: &AppState, user_id: &str, match_type: &str) -> Op
     let is_white = if is_initiator {
         let is_white = rand_bool();
         create_match_row(state, &match_id, user_id, &opponent_id, is_white, match_type).await;
-        register_in_memory(state, &match_id, if is_white { user_id } else { &opponent_id }, if is_white { &opponent_id } else { user_id }, match_type).await;
+        register_in_memory(
+            state,
+            &match_id,
+            if is_white { user_id } else { &opponent_id },
+            if is_white { &opponent_id } else { user_id },
+            match_type,
+        )
+        .await;
         is_white
     } else {
-        // Poll briefly for the initiator's row to land.
+        // Wait until initiator created DB row + in-memory session (up to ~10s).
         let mut is_white = false;
-        for _ in 0..40 {
+        for _ in 0..100 {
             if let Some(row) = fetch_match_row(state, &match_id).await {
                 is_white = row.0 == user_id;
-                break;
+                if state.match_registry.subscribe(&match_id).await.is_some() {
+                    break;
+                }
             }
-            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
         is_white
     };
@@ -198,6 +213,20 @@ async fn get_opponent_id(state: &AppState, match_id: &str, is_white: bool) -> St
     } else {
         String::new()
     }
+}
+
+async fn get_username(state: &AppState, user_id: &str) -> String {
+    if user_id.is_empty() {
+        return String::new();
+    }
+    sqlx::query_as::<_, (String,)>("SELECT username FROM users WHERE id = ?")
+        .bind(user_id)
+        .fetch_optional(&state.db)
+        .await
+        .ok()
+        .flatten()
+        .map(|(u,)| u)
+        .unwrap_or_default()
 }
 
 async fn get_rating(state: &AppState, user_id: &str) -> i64 {

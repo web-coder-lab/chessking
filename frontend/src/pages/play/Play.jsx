@@ -98,6 +98,13 @@ export default function Play({ user }) {
       });
 
       socket.joinQueue(matchType);
+
+      // Keep connection alive while searching (server ignores unknown? Heartbeat handled)
+      const hb = setInterval(() => {
+        try { socket.send({ type: 'heartbeat' }); } catch (_) {}
+      }, 15000);
+      // clear on unmount via cancel which closes socket
+      socket.on('__closed', () => clearInterval(hb));
     } catch (e) {
       resetToChoose(e.message || 'Could not start matchmaking');
     }
