@@ -110,6 +110,10 @@ impl GameState {
         None
     }
 
+    pub fn fen(&self) -> String {
+        Fen::from_position(self.position.clone(), shakmaty::EnPassantMode::Legal).to_string()
+    }
+
     pub fn side_to_move(&self) -> Color {
         self.position.turn()
     }

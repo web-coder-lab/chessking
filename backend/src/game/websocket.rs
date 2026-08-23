@@ -317,8 +317,16 @@ async fn handle_move(
     }).await.unwrap_or((None, String::new()));
 
     // §3.1 step 4: broadcast updated state to BOTH clients.
+    let fen = state.match_registry.with_session(match_id, |s| s.game.fen()).await.unwrap_or_default();
     if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
-        let _ = tx.send(json!({ "type": "board_update", "from": from, "to": to, "promotion": promotion, "pgn": pgn }).to_string());
+        let _ = tx.send(json!({
+            "type": "board_update",
+            "from": from,
+            "to": to,
+            "promotion": promotion,
+            "pgn": pgn,
+            "fen": fen
+        }).to_string());
     }
 
     if let Some(outcome) = game_end {
