@@ -96,6 +96,24 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: String) {
     // back, and notify the opponent's client.
     if was_resume {
         notify_reconnected(&state, &match_id, &user_id, is_white).await;
+        // Phase 4: push full board state to the reconnecting client
+        if let Some((fen, pgn)) = state
+            .match_registry
+            .with_session(&match_id, |s| (s.game.fen(), s.game.to_pgn()))
+            .await
+        {
+            let _ = sender
+                .send(Message::Text(
+                    json!({
+                        "type": "board_sync",
+                        "fen": fen,
+                        "pgn": pgn,
+                        "color": color
+                    })
+                    .to_string(),
+                ))
+                .await;
+        }
     }
 
     // Phase 2: the match loop — forward broadcast events to this client,
@@ -193,9 +211,53 @@ async fn resume_existing_match(state: &AppState, user_id: &str, match_id: &str) 
     let row = fetch_match_row(state, match_id).await?;
     let is_white = row.0 == user_id;
     if !is_white && row.1 != user_id {
-        return None; // not a participant in this match
+        return None;
     }
+    // Phase 4: ensure in-memory session exists (rebuild from DB pgn if needed)
+    ensure_session_loaded(state, match_id).await;
     Some((match_id.to_string(), is_white, false))
+}
+
+/// Load match into MatchRegistry from DB when missing (reconnect / multi-instance gap).
+async fn ensure_session_loaded(state: &AppState, match_id: &str) {
+    if state.match_registry.subscribe(match_id).await.is_some() {
+        return;
+    }
+    let row: Option<(String, String, String, Option<String>)> = sqlx::query_as(
+        "SELECT player_white_id, player_black_id, match_type, pgn FROM matches WHERE id = ? AND status = 'in_progress'"
+    )
+    .bind(match_id)
+    .fetch_optional(&state.db)
+    .await
+    .ok()
+    .flatten();
+
+    let Some((white_id, black_id, match_type, pgn)) = row else {
+        return;
+    };
+
+    let game = if let Some(ref p) = pgn {
+        let moves: Vec<String> = p.split_whitespace().map(|s| s.to_string()).collect();
+        GameState::from_move_history(&moves).unwrap_or_else(|_| GameState::new())
+    } else {
+        GameState::new()
+    };
+
+    let (tx, _rx) = tokio::sync::broadcast::channel(32);
+    state
+        .match_registry
+        .insert(
+            match_id.to_string(),
+            MatchSession {
+                game,
+                white_id,
+                black_id,
+                match_type,
+                events: tx,
+                disconnect: DisconnectTracker::new(),
+            },
+        )
+        .await;
 }
 
 async fn fetch_match_row(state: &AppState, match_id: &str) -> Option<(String, String)> {
@@ -347,6 +409,13 @@ async fn handle_move(
 
     // §3.1 step 4: broadcast updated state to BOTH clients.
     let fen = state.match_registry.with_session(match_id, |s| s.game.fen()).await.unwrap_or_default();
+    // Phase 4: persist every ply so reconnect / restart can resume
+    let _ = sqlx::query("UPDATE matches SET pgn = ? WHERE id = ? AND status = 'in_progress'")
+        .bind(&pgn)
+        .bind(match_id)
+        .execute(&state.db)
+        .await;
+
     if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
         let _ = tx.send(json!({
             "type": "board_update",

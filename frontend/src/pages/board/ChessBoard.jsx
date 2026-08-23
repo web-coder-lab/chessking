@@ -165,6 +165,15 @@ export default function ChessBoard({ user }) {
           setStatusLine('Move applied');
         });
 
+        socket.on('board_sync', (msg) => {
+          if (msg.color) {
+            setColor(msg.color);
+            myColorRef.current = msg.color;
+          }
+          applyServerFen(msg.fen, null, null);
+          setStatusLine('Board synced');
+        });
+
         socket.on('opponent_disconnected', () => {
           setOpponentDisconnected(true);
           setDisconnectCountdown(60);
