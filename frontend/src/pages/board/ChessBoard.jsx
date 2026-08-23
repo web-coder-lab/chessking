@@ -12,6 +12,7 @@ import Toast from '../../components/common/Toast';
 import './ChessBoard.css';
 import { soundMove, soundCapture, soundCheck, soundGameEnd, soundDrawOffer } from '../../utils/gameSounds';
 import { VoiceChannel } from '../../utils/voiceChannel';
+import { buildPgn, copyText, sharePgn } from '../../utils/pgnExport';
 
 const INITIAL_CLOCK_MS = 10 * 60 * 1000; // 10+0 display (server clocks = Phase 5)
 const PROMO_PIECES = ['q', 'r', 'b', 'n'];
@@ -423,6 +424,31 @@ export default function ChessBoard({ user }) {
     }
   }
 
+  function currentPgn(resultOverride) {
+    const me = user?.username || 'You';
+    const opp = opponentUsername || 'Opponent';
+    const whiteName = color === 'white' ? me : opp;
+    const blackName = color === 'black' ? me : opp;
+    return buildPgn({
+      movesSan: historySan.length ? historySan : chessRef.current.history(),
+      whiteName,
+      blackName,
+      result: resultOverride || matchEnded?.result || '*',
+      matchType: matchType || matchEnded?.match_type || 'casual',
+      matchId,
+    });
+  }
+
+  async function handleCopyPgn() {
+    const ok = await copyText(currentPgn());
+    setToast({ message: ok ? 'PGN copied' : 'Could not copy' });
+  }
+
+  async function handleSharePgn() {
+    const ok = await sharePgn(currentPgn());
+    setToast({ message: ok ? 'Shared / copied PGN' : 'Could not share' });
+  }
+
   function handleOfferDraw() {
     if (drawOfferSent || drawOfferFromOpp) return;
     socketRef.current?.offerDraw(matchId);
@@ -512,9 +538,13 @@ export default function ChessBoard({ user }) {
             )}
           </p>
         )}
-        <Button onClick={() => navigate('/dashboard')} style={{ marginTop: 'var(--space-6)' }}>
-          Back to Dashboard
-        </Button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 20 }}>
+          <Button onClick={handleCopyPgn}>Copy PGN</Button>
+          <Button variant="outline" onClick={handleSharePgn}>Share PGN</Button>
+          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
@@ -646,6 +676,14 @@ export default function ChessBoard({ user }) {
               {move}
             </span>
           ))}
+          <div style={{ width: '100%', marginTop: 8, display: 'flex', gap: 8 }}>
+            <button type="button" className="ck-board__draw" onClick={handleCopyPgn}>
+              Copy PGN
+            </button>
+            <button type="button" className="ck-board__draw" onClick={handleSharePgn}>
+              Share
+            </button>
+          </div>
         </div>
       )}
 
