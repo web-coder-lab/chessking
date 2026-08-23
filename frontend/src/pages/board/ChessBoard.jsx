@@ -11,6 +11,7 @@ import GiftAnimation from '../../components/gifts/GiftAnimation';
 import Toast from '../../components/common/Toast';
 import './ChessBoard.css';
 import { soundMove, soundCapture, soundCheck, soundGameEnd, soundDrawOffer } from '../../utils/gameSounds';
+import { VoiceChannel } from '../../utils/voiceChannel';
 
 const INITIAL_CLOCK_MS = 10 * 60 * 1000; // 10+0 display (server clocks = Phase 5)
 const PROMO_PIECES = ['q', 'r', 'b', 'n'];
@@ -57,6 +58,11 @@ export default function ChessBoard({ user }) {
   const [matchType, setMatchType] = useState('ranked');
 
   const socketRef = useRef(location.state?.socket || null);
+  const voiceRef = useRef(null);
+  const [micOn, setMicOn] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
+  const [micError, setMicError] = useState('');
+  const isInitiatorRef = useRef(!!location.state?.socket); // queue handoff side often has socket
   const countdownRef = useRef(null);
   const myColorRef = useRef(location.state?.color || 'white');
 
@@ -232,6 +238,13 @@ export default function ChessBoard({ user }) {
           setToast({ message: 'Draw declined' });
         });
 
+        socket.on('webrtc_signal', async (msg) => {
+          if (!voiceRef.current) return;
+          try {
+            await voiceRef.current.handleSignal(msg.payload);
+          } catch (_) {}
+        });
+
         socket.on('gift_sent', (msg) => {
           if (msg.sender_username === user?.username) return;
           setPlayingGift({
@@ -270,6 +283,8 @@ export default function ChessBoard({ user }) {
     return () => {
       cancelled = true;
       clearInterval(countdownRef.current);
+      voiceRef.current?.stop();
+      voiceRef.current = null;
     };
   }, [matchId, accessToken, applyServerFen, user?.username]);
 
@@ -372,6 +387,34 @@ export default function ChessBoard({ user }) {
     setLastMove({ from, to });
     socketRef.current?.move(matchId, from, to, piece);
     setStatusLine('Sending promotion…');
+  }
+
+  async function handleEnableVoice() {
+    setMicError('');
+    try {
+      const socket = socketRef.current;
+      if (!socket) throw new Error('Not connected');
+      const vc = new VoiceChannel({
+        matchId,
+        isInitiator: true,
+        sendSignal: (payload) => socket.webrtcSignal(matchId, payload),
+      });
+      voiceRef.current = vc;
+      await vc.start();
+      setMicOn(true);
+      setMicMuted(false);
+      setToast({ message: 'Microphone on — opponent must enable voice too' });
+    } catch (e) {
+      setMicError(e.message || 'Mic failed');
+      setToast({ message: e.message || 'Could not access microphone' });
+    }
+  }
+
+  function handleToggleMute() {
+    if (!voiceRef.current || !micOn) return;
+    const next = !micMuted;
+    voiceRef.current.setMuted(next);
+    setMicMuted(next);
   }
 
   function handleResign() {
@@ -525,15 +568,27 @@ export default function ChessBoard({ user }) {
       )}
 
       <div className="ck-board__toolbar">
-        <button
-          type="button"
-          className="icon-tap-target"
-          aria-label="Voice chat not available"
-          disabled
-          title="Voice chat — Phase later (WebRTC). Not available yet."
-        >
-          🎙️
-        </button>
+        {!micOn ? (
+          <button
+            type="button"
+            className="icon-tap-target"
+            aria-label="Enable voice"
+            title="Enable voice chat"
+            onClick={handleEnableVoice}
+          >
+            🎙️
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="icon-tap-target"
+            aria-label={micMuted ? 'Unmute' : 'Mute'}
+            title={micMuted ? 'Unmute' : 'Mute'}
+            onClick={handleToggleMute}
+          >
+            {micMuted ? '🔇' : '🎙️'}
+          </button>
+        )}
         <button type="button" className="ck-board__hint" onClick={handleHint} disabled={hintLoading}>
           {hintLoading ? '…' : 'Hint'}
         </button>
