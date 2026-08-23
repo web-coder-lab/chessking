@@ -126,6 +126,8 @@ impl GameState {
 /// Doc 7 Sec3.1 step 5b: standard Elo formula, ranked matches only.
 /// K-factor = 32 (standard default; not specified numerically in the
 /// doc).
+/// Elo K=32. `is_a` true means rating_a is the player whose new rating is returned.
+/// Phase 10: white uses is_a=true; black uses is_a=false with swapped ratings args.
 pub fn calculate_elo(rating_a: i64, rating_b: i64, outcome: GameOutcome, is_a: bool) -> i64 {
     const K: f64 = 32.0;
     let score_a: f64 = match outcome {

@@ -481,22 +481,37 @@ export default function ChessBoard({ user }) {
       : "Opponent's turn";
 
   if (matchEnded) {
-    const won =
-      matchEnded.result === 'draw'
-        ? null
-        : matchEnded.result?.includes(color) ||
-          matchEnded.result === color ||
-          matchEnded.result?.startsWith(color);
+    const isDraw =
+      matchEnded.result === 'draw' ||
+      matchEnded.result === '1/2-1/2';
+    const won = isDraw
+      ? null
+      : matchEnded.result === 'white_win'
+        ? color === 'white'
+        : matchEnded.result === 'black_win'
+          ? color === 'black'
+          : matchEnded.result?.includes(color);
+    const myDelta =
+      color === 'white' ? matchEnded.white_delta : matchEnded.black_delta;
+    const myAfter =
+      color === 'white' ? matchEnded.white_rating_after : matchEnded.black_rating_after;
+    const ranked = matchEnded.match_type === 'ranked';
     return (
       <div className="ck-board-screen ck-board-screen--ended">
         <h1 className="page-title">
-          {matchEnded.result === 'draw' || matchEnded.result === '1/2-1/2'
-            ? 'Draw'
-            : won
-              ? 'You Won!'
-              : 'You Lost'}
+          {isDraw ? 'Draw' : won ? 'You Won!' : 'You Lost'}
         </h1>
         <p className="text-secondary">{matchEnded.result_reason || matchEnded.result}</p>
+        {ranked && typeof myAfter === 'number' && (
+          <p style={{ marginTop: 12, fontSize: 18, fontWeight: 700, color: 'var(--accent-gold)' }}>
+            Rating {myAfter}
+            {typeof myDelta === 'number' && (
+              <span style={{ color: myDelta >= 0 ? 'var(--success-green)' : 'var(--danger-red)', marginLeft: 8 }}>
+                {myDelta >= 0 ? '+' : ''}{myDelta}
+              </span>
+            )}
+          </p>
+        )}
         <Button onClick={() => navigate('/dashboard')} style={{ marginTop: 'var(--space-6)' }}>
           Back to Dashboard
         </Button>
