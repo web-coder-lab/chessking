@@ -14,7 +14,7 @@ use super::disconnect::DisconnectTracker;
 use super::engine::GameState;
 use super::finalize::finalize_match;
 use super::matchmaking::QueuedPlayer;
-use super::state::MatchSession;
+use super::state::{MatchSession, DEFAULT_CLOCK_MS};
 
 #[derive(Deserialize)]
 pub struct WsAuthQuery {
@@ -97,9 +97,9 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: String) {
     if was_resume {
         notify_reconnected(&state, &match_id, &user_id, is_white).await;
         // Phase 4: push full board state to the reconnecting client
-        if let Some((fen, pgn)) = state
+        if let Some((fen, pgn, white_ms, black_ms)) = state
             .match_registry
-            .with_session(&match_id, |s| (s.game.fen(), s.game.to_pgn()))
+            .with_session(&match_id, |s| (s.game.fen(), s.game.to_pgn(), s.white_ms, s.black_ms))
             .await
         {
             let _ = sender
@@ -108,7 +108,9 @@ async fn handle_socket(socket: WebSocket, state: AppState, user_id: String) {
                         "type": "board_sync",
                         "fen": fen,
                         "pgn": pgn,
-                        "color": color
+                        "color": color,
+                        "white_ms": white_ms,
+                        "black_ms": black_ms
                     })
                     .to_string(),
                 ))
@@ -255,6 +257,9 @@ async fn ensure_session_loaded(state: &AppState, match_id: &str) {
                 match_type,
                 events: tx,
                 disconnect: DisconnectTracker::new(),
+                white_ms: DEFAULT_CLOCK_MS,
+                black_ms: DEFAULT_CLOCK_MS,
+                turn_started_at: Instant::now(),
             },
         )
         .await;
@@ -329,6 +334,9 @@ async fn register_in_memory(state: &AppState, match_id: &str, white_id: &str, bl
         match_type: match_type.to_string(),
         events: tx,
         disconnect: DisconnectTracker::new(),
+        white_ms: DEFAULT_CLOCK_MS,
+        black_ms: DEFAULT_CLOCK_MS,
+        turn_started_at: Instant::now(),
     }).await;
 }
 
@@ -389,15 +397,72 @@ async fn handle_move(
         return;
     }
 
+    // Phase 5: apply elapsed time to the side about to move
+    let flagged = state
+        .match_registry
+        .with_session(match_id, |s| {
+            let white_tm = s.game.side_to_move() == shakmaty::Color::White;
+            s.tick_clock_for_side(white_tm)
+        })
+        .await;
+
+    if flagged == Some(true) {
+        let info = state
+            .match_registry
+            .with_session(match_id, |s| {
+                (
+                    s.white_id.clone(),
+                    s.black_id.clone(),
+                    s.match_type.clone(),
+                    s.white_ms,
+                    s.black_ms,
+                )
+            })
+            .await;
+        if let Some((white_id, black_id, match_type, white_ms, black_ms)) = info {
+            // Side to move ran out → opponent wins
+            let outcome = if is_white {
+                super::engine::GameOutcome::BlackWins
+            } else {
+                super::engine::GameOutcome::WhiteWins
+            };
+            let _ = finalize_match(
+                &state.db,
+                &state.match_registry,
+                match_id,
+                &white_id,
+                &black_id,
+                outcome,
+                "disconnect_timeout",
+                &match_type,
+            )
+            .await;
+            if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
+                let _ = tx.send(
+                    json!({
+                        "type": "match_ended",
+                        "result": if is_white { "black_win" } else { "white_win" },
+                        "result_reason": "timeout",
+                        "white_ms": white_ms,
+                        "black_ms": black_ms
+                    })
+                    .to_string(),
+                );
+            }
+        }
+        return;
+    }
+
     let move_result = state.match_registry.with_session(match_id, |s| {
         s.game.try_apply_move(from, to, promotion)
     }).await;
 
     match move_result {
-        Some(Ok(())) => {}
+        Some(Ok(())) => {
+            let _ = state.match_registry.with_session(match_id, |s| s.start_opponent_clock()).await;
+        }
         _ => {
-            // §3.1 step c: illegal → reject, error to submitting client
-            // ONLY, board state unchanged (nothing was mutated).
+            // Illegal: board unchanged. Clock already deducted for think time (chess.com-like).
             let _ = sender.send(Message::Text(json!({"type":"error","code":"illegal_move"}).to_string())).await;
             return;
         }
@@ -416,6 +481,7 @@ async fn handle_move(
         .execute(&state.db)
         .await;
 
+    let (white_ms, black_ms) = state.match_registry.with_session(match_id, |s| (s.white_ms, s.black_ms)).await.unwrap_or((DEFAULT_CLOCK_MS, DEFAULT_CLOCK_MS));
     if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
         let _ = tx.send(json!({
             "type": "board_update",
@@ -423,7 +489,9 @@ async fn handle_move(
             "to": to,
             "promotion": promotion,
             "pgn": pgn,
-            "fen": fen
+            "fen": fen,
+            "white_ms": white_ms,
+            "black_ms": black_ms
         }).to_string());
     }
 

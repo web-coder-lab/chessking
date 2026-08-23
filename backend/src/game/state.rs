@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::{broadcast, Mutex};
 
 use super::disconnect::DisconnectTracker;
 use super::engine::GameState;
 
-/// Doc 7 §3.1 step a: "an in-memory game-state cache keyed by match_id."
-/// This is the live authoritative board for every in-progress match. On
-/// server restart, a match's state is rebuilt from `matches.pgn` via
-/// `GameState::from_move_history` instead of being lost.
+/// Default time control: 10 minutes per side, no increment (Phase 5).
+pub const DEFAULT_CLOCK_MS: i64 = 10 * 60 * 1000;
+
 #[derive(Clone)]
 pub struct MatchRegistry {
     inner: Arc<Mutex<HashMap<String, MatchSession>>>,
@@ -18,16 +18,39 @@ pub struct MatchSession {
     pub game: GameState,
     pub white_id: String,
     pub black_id: String,
-    pub match_type: String, // "ranked" | "casual" | "custom"
-    /// Broadcasts board updates / move events / disconnect banners to
-    /// both connected clients (Doc 7 §3.1 step 4, §4.1 step 4).
+    pub match_type: String,
     pub events: broadcast::Sender<String>,
     pub disconnect: DisconnectTracker,
+    /// Remaining time (ms). Server-authoritative.
+    pub white_ms: i64,
+    pub black_ms: i64,
+    /// When the current side-to-move's clock started ticking.
+    pub turn_started_at: Instant,
+}
+
+impl MatchSession {
+    /// Apply elapsed time to the side that was to move. Returns true if that side flagged.
+    pub fn tick_clock_for_side(&mut self, white_to_move: bool) -> bool {
+        let elapsed = self.turn_started_at.elapsed().as_millis() as i64;
+        if white_to_move {
+            self.white_ms = (self.white_ms - elapsed).max(0);
+            self.white_ms == 0
+        } else {
+            self.black_ms = (self.black_ms - elapsed).max(0);
+            self.black_ms == 0
+        }
+    }
+
+    pub fn start_opponent_clock(&mut self) {
+        self.turn_started_at = Instant::now();
+    }
 }
 
 impl MatchRegistry {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Mutex::new(HashMap::new())) }
+        Self {
+            inner: Arc::new(Mutex::new(HashMap::new())),
+        }
     }
 
     pub async fn insert(&self, match_id: String, session: MatchSession) {

@@ -162,6 +162,8 @@ export default function ChessBoard({ user }) {
 
         socket.on('board_update', (msg) => {
           applyServerFen(msg.fen, msg.from, msg.to);
+          if (typeof msg.white_ms === 'number') setWhiteClockMs(msg.white_ms);
+          if (typeof msg.black_ms === 'number') setBlackClockMs(msg.black_ms);
           setStatusLine('Move applied');
         });
 
@@ -171,6 +173,8 @@ export default function ChessBoard({ user }) {
             myColorRef.current = msg.color;
           }
           applyServerFen(msg.fen, null, null);
+          if (typeof msg.white_ms === 'number') setWhiteClockMs(msg.white_ms);
+          if (typeof msg.black_ms === 'number') setBlackClockMs(msg.black_ms);
           setStatusLine('Board synced');
         });
 
