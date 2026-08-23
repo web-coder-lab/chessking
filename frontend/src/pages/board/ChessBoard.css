@@ -186,3 +186,18 @@
   color: var(--text-secondary, #9CA3AF);
   border: 1px solid var(--border-subtle, #2A2E37);
 }
+
+.ck-board-anim-wrap {
+  animation: ck-board-pulse 0.22s ease-out;
+}
+@keyframes ck-board-pulse {
+  from { transform: scale(0.992); opacity: 0.92; }
+  to { transform: scale(1); opacity: 1; }
+}
+.ck-board__square--last-move .ck-board__piece {
+  animation: ck-piece-land 0.18s ease-out;
+}
+@keyframes ck-piece-land {
+  from { transform: scale(1.12); }
+  to { transform: scale(1); }
+}

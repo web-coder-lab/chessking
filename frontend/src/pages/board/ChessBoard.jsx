@@ -10,6 +10,7 @@ import GiftPicker from '../../components/gifts/GiftPicker';
 import GiftAnimation from '../../components/gifts/GiftAnimation';
 import Toast from '../../components/common/Toast';
 import './ChessBoard.css';
+import { soundMove, soundCapture, soundCheck, soundGameEnd, soundDrawOffer } from '../../utils/gameSounds';
 
 const INITIAL_CLOCK_MS = 10 * 60 * 1000; // 10+0 display (server clocks = Phase 5)
 const PROMO_PIECES = ['q', 'r', 'b', 'n'];
@@ -50,6 +51,7 @@ export default function ChessBoard({ user }) {
   const [blackClockMs, setBlackClockMs] = useState(INITIAL_CLOCK_MS);
   const [checkSquare, setCheckSquare] = useState(null);
   const [pendingPromo, setPendingPromo] = useState(null); // { from, to }
+  const [moveAnimKey, setMoveAnimKey] = useState(0);
   const [drawOfferFromOpp, setDrawOfferFromOpp] = useState(false);
   const [drawOfferSent, setDrawOfferSent] = useState(false);
   const [matchType, setMatchType] = useState('ranked');
@@ -74,7 +76,7 @@ export default function ChessBoard({ user }) {
         }
       }
       setFen(chessRef.current.fen());
-      if (from && to) setLastMove({ from, to });
+      if (from && to) { setLastMove({ from, to }); setMoveAnimKey((k) => k + 1); }
       refreshHistory();
     } catch (e) {
       console.error('fen apply failed', e);
@@ -163,9 +165,24 @@ export default function ChessBoard({ user }) {
         });
 
         socket.on('board_update', (msg) => {
+          const before = chessRef.current.fen();
+          let wasCapture = false;
+          if (msg.from && msg.to) {
+            try {
+              const target = chessRef.current.get(msg.to);
+              wasCapture = !!target;
+            } catch (_) {}
+          }
           applyServerFen(msg.fen, msg.from, msg.to);
           if (typeof msg.white_ms === 'number') setWhiteClockMs(msg.white_ms);
           if (typeof msg.black_ms === 'number') setBlackClockMs(msg.black_ms);
+          try {
+            if (chessRef.current.inCheck()) soundCheck();
+            else if (wasCapture) soundCapture();
+            else soundMove();
+          } catch (_) {
+            soundMove();
+          }
           setStatusLine('Move applied');
         });
 
@@ -199,13 +216,14 @@ export default function ChessBoard({ user }) {
           clearInterval(countdownRef.current);
           setDrawOfferFromOpp(false);
           setDrawOfferSent(false);
+          soundGameEnd();
         });
 
         socket.on('draw_offered', (msg) => {
-          // If we didn't send it, show accept UI
           setDrawOfferFromOpp(true);
           setDrawOfferSent(false);
           setToast({ message: 'Opponent offers a draw' });
+          soundDrawOffer();
         });
 
         socket.on('draw_declined', () => {
@@ -477,16 +495,18 @@ export default function ChessBoard({ user }) {
         </div>
       </div>
 
-      <Board
-        fen={fen}
-        orientation={color}
-        onMove={handleSquareTap}
-        selectedSquare={selectedSquare}
-        legalTargets={legalTargets}
-        lastMove={lastMove}
-        hintMove={hintMove}
-        checkSquare={checkSquare}
-      />
+      <div key={moveAnimKey} className="ck-board-anim-wrap">
+        <Board
+          fen={fen}
+          orientation={color}
+          onMove={handleSquareTap}
+          selectedSquare={selectedSquare}
+          legalTargets={legalTargets}
+          lastMove={lastMove}
+          hintMove={hintMove}
+          checkSquare={checkSquare}
+        />
+      </div>
 
       {pendingPromo && (
         <div className="ck-board__promo">
