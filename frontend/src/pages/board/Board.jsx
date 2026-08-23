@@ -8,15 +8,21 @@ const PIECE_UNICODE = {
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
 /**
- * Doc 4 §2.8: "Board: centered, square aspect ratio, uses the user's OWN
- * equipped board/piece skin (server-enforced — opponent sees their own
- * skin, not yours)." Skin here means CSS theme applied client-side per
- * the user's equipped inventory item — the board STATE itself is always
- * server-authoritative (Doc 7 §3), never decided by this component.
+ * Visual board — state is always driven by parent (server-backed FEN).
  */
-export default function Board({ fen, orientation = 'white', onMove, selectedSquare, legalTargets = [], lastMove, hintMove }) {
+export default function Board({
+  fen,
+  orientation = 'white',
+  onMove,
+  selectedSquare,
+  legalTargets = [],
+  lastMove,
+  hintMove,
+  checkSquare = null,
+}) {
   const rows = parseFen(fen);
-  const displayRows = orientation === 'white' ? rows : [...rows].reverse().map((r) => [...r].reverse());
+  const displayRows =
+    orientation === 'white' ? rows : [...rows].reverse().map((r) => [...r].reverse());
 
   return (
     <div className="ck-board" role="grid" aria-label="Chess board">
@@ -31,22 +37,33 @@ export default function Board({ fen, orientation = 'white', onMove, selectedSqua
             const isTarget = legalTargets.includes(square);
             const isLastMove = lastMove && (lastMove.from === square || lastMove.to === square);
             const isHint = hintMove && (hintMove.from === square || hintMove.to === square);
+            const isCheck = checkSquare === square;
 
             return (
               <button
                 key={square}
+                type="button"
                 className={[
                   'ck-board__square',
                   isLight ? 'ck-board__square--light' : 'ck-board__square--dark',
                   isSelected ? 'ck-board__square--selected' : '',
                   isLastMove ? 'ck-board__square--last-move' : '',
                   isHint ? 'ck-board__square--hint' : '',
-                ].join(' ').trim()}
+                  isCheck ? 'ck-board__square--check' : '',
+                ]
+                  .join(' ')
+                  .trim()}
                 onClick={() => onMove(square)}
                 aria-label={square}
               >
                 {piece && (
-                  <span className={`ck-board__piece ${piece === piece.toUpperCase() ? 'ck-board__piece--white' : 'ck-board__piece--black'}`}>
+                  <span
+                    className={`ck-board__piece ${
+                      piece === piece.toUpperCase()
+                        ? 'ck-board__piece--white'
+                        : 'ck-board__piece--black'
+                    }`}
+                  >
                     {PIECE_UNICODE[piece]}
                   </span>
                 )}

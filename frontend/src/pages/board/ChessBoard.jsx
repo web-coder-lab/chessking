@@ -11,6 +11,10 @@ import GiftAnimation from '../../components/gifts/GiftAnimation';
 import Toast from '../../components/common/Toast';
 import './ChessBoard.css';
 
+const INITIAL_CLOCK_MS = 10 * 60 * 1000; // 10+0 display (server clocks = Phase 5)
+const PROMO_PIECES = ['q', 'r', 'b', 'n'];
+const PROMO_LABEL = { q: '♛', r: '♜', b: '♝', n: '♞' };
+
 /**
  * Phase 1 — real match UI:
  * - Server is authority (shakmaty). Local chess.js only mirrors.
@@ -42,6 +46,10 @@ export default function ChessBoard({ user }) {
   const [showGiftPicker, setShowGiftPicker] = useState(false);
   const [playingGift, setPlayingGift] = useState(null);
   const [statusLine, setStatusLine] = useState('Connecting…');
+  const [whiteClockMs, setWhiteClockMs] = useState(INITIAL_CLOCK_MS);
+  const [blackClockMs, setBlackClockMs] = useState(INITIAL_CLOCK_MS);
+  const [checkSquare, setCheckSquare] = useState(null);
+  const [pendingPromo, setPendingPromo] = useState(null); // { from, to }
   const [matchType, setMatchType] = useState('ranked');
 
   const socketRef = useRef(location.state?.socket || null);
@@ -217,6 +225,47 @@ export default function ChessBoard({ user }) {
     };
   }, [matchId, accessToken, applyServerFen, user?.username]);
 
+  // Client-side clocks (display). Server authority = Phase 5.
+  useEffect(() => {
+    if (matchEnded) return undefined;
+    const id = setInterval(() => {
+      const turn = chessRef.current.turn();
+      if (turn === 'w') {
+        setWhiteClockMs((ms) => Math.max(0, ms - 250));
+      } else {
+        setBlackClockMs((ms) => Math.max(0, ms - 250));
+      }
+    }, 250);
+    return () => clearInterval(id);
+  }, [matchEnded, fen]);
+
+  function formatClock(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${r.toString().padStart(2, '0')}`;
+  }
+
+  function updateCheckSquare() {
+    try {
+      if (chessRef.current.inCheck()) {
+        const turn = chessRef.current.turn(); // side in check
+        const board = chessRef.current.board();
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = board[r][c];
+            if (p && p.type === 'k' && p.color === turn) {
+              const sq = 'abcdefgh'[c] + (8 - r);
+              setCheckSquare(sq);
+              return;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+    setCheckSquare(null);
+  }
+
   function isMyTurn() {
     const turn = chessRef.current.turn(); // 'w' | 'b'
     const me = myColorRef.current || color;
@@ -237,14 +286,14 @@ export default function ChessBoard({ user }) {
         const piece = chessRef.current.get(selectedSquare);
         const isPromotion =
           piece?.type === 'p' && (square[1] === '8' || square[1] === '1');
-        // Optimistic highlight only — board waits for server board_update
+        if (isPromotion) {
+          setPendingPromo({ from: selectedSquare, to: square });
+          setSelectedSquare(null);
+          setLegalTargets([]);
+          return;
+        }
         setLastMove({ from: selectedSquare, to: square });
-        socketRef.current?.move(
-          matchId,
-          selectedSquare,
-          square,
-          isPromotion ? 'q' : undefined
-        );
+        socketRef.current?.move(matchId, selectedSquare, square, undefined);
         setStatusLine('Sending move…');
       }
       setSelectedSquare(null);
@@ -266,6 +315,15 @@ export default function ChessBoard({ user }) {
     const moves = chessRef.current.moves({ square, verbose: true });
     setSelectedSquare(square);
     setLegalTargets(moves.map((m) => m.to));
+  }
+
+  function confirmPromo(piece) {
+    if (!pendingPromo) return;
+    const { from, to } = pendingPromo;
+    setPendingPromo(null);
+    setLastMove({ from, to });
+    socketRef.current?.move(matchId, from, to, piece);
+    setStatusLine('Sending promotion…');
   }
 
   function handleResign() {
@@ -361,6 +419,17 @@ export default function ChessBoard({ user }) {
         </span>
       </div>
 
+      <div className="ck-board__clocks">
+        <div className={`ck-board__clock ${color === 'black' ? 'ck-board__clock--active' : ''}`}>
+          <span className="text-secondary">Opp</span>
+          <span className="tabular-nums">{formatClock(color === 'white' ? blackClockMs : whiteClockMs)}</span>
+        </div>
+        <div className={`ck-board__clock ${color === 'white' ? 'ck-board__clock--active' : ''}`}>
+          <span className="text-secondary">You</span>
+          <span className="tabular-nums">{formatClock(color === 'white' ? whiteClockMs : blackClockMs)}</span>
+        </div>
+      </div>
+
       <Board
         fen={fen}
         orientation={color}
@@ -369,7 +438,24 @@ export default function ChessBoard({ user }) {
         legalTargets={legalTargets}
         lastMove={lastMove}
         hintMove={hintMove}
+        checkSquare={checkSquare}
       />
+
+      {pendingPromo && (
+        <div className="ck-board__promo">
+          <p className="text-secondary">Promote to</p>
+          <div className="ck-board__promo-row">
+            {PROMO_PIECES.map((pc) => (
+              <button key={pc} type="button" className="ck-board__promo-btn" onClick={() => confirmPromo(pc)}>
+                {PROMO_LABEL[pc]}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="text-secondary" onClick={() => setPendingPromo(null)}>
+            Cancel
+          </button>
+        </div>
+      )}
 
       <div className="ck-board__toolbar">
         <button

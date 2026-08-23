@@ -93,3 +93,55 @@
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
+
+.ck-board__clocks {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 var(--screen-padding-x, 16px);
+  margin-bottom: 8px;
+}
+.ck-board__clock {
+  flex: 1;
+  background: var(--bg-surface, #1A1D23);
+  border: 1px solid var(--border-subtle, #2A2E37);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+.ck-board__clock--active {
+  border-color: var(--accent-gold, #D4AF37);
+  box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.35);
+}
+.ck-board__promo {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  transform: translateX(-50%);
+  background: var(--bg-surface, #1A1D23);
+  border: 1px solid var(--accent-gold, #D4AF37);
+  border-radius: 12px;
+  padding: 12px 16px;
+  z-index: 40;
+  text-align: center;
+  min-width: 220px;
+}
+.ck-board__promo-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.ck-board__promo-btn {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #2A2E37);
+  background: var(--bg-primary, #0F1115);
+  cursor: pointer;
+}
