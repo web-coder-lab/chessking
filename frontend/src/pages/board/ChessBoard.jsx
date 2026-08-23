@@ -50,6 +50,8 @@ export default function ChessBoard({ user }) {
   const [blackClockMs, setBlackClockMs] = useState(INITIAL_CLOCK_MS);
   const [checkSquare, setCheckSquare] = useState(null);
   const [pendingPromo, setPendingPromo] = useState(null); // { from, to }
+  const [drawOfferFromOpp, setDrawOfferFromOpp] = useState(false);
+  const [drawOfferSent, setDrawOfferSent] = useState(false);
   const [matchType, setMatchType] = useState('ranked');
 
   const socketRef = useRef(location.state?.socket || null);
@@ -195,6 +197,21 @@ export default function ChessBoard({ user }) {
         socket.on('match_ended', (msg) => {
           setMatchEnded(msg);
           clearInterval(countdownRef.current);
+          setDrawOfferFromOpp(false);
+          setDrawOfferSent(false);
+        });
+
+        socket.on('draw_offered', (msg) => {
+          // If we didn't send it, show accept UI
+          setDrawOfferFromOpp(true);
+          setDrawOfferSent(false);
+          setToast({ message: 'Opponent offers a draw' });
+        });
+
+        socket.on('draw_declined', () => {
+          setDrawOfferSent(false);
+          setDrawOfferFromOpp(false);
+          setToast({ message: 'Draw declined' });
         });
 
         socket.on('gift_sent', (msg) => {
@@ -345,6 +362,23 @@ export default function ChessBoard({ user }) {
     }
   }
 
+  function handleOfferDraw() {
+    if (drawOfferSent || drawOfferFromOpp) return;
+    socketRef.current?.offerDraw(matchId);
+    setDrawOfferSent(true);
+    setToast({ message: 'Draw offer sent' });
+  }
+
+  function handleAcceptDraw() {
+    socketRef.current?.acceptDraw(matchId);
+    setDrawOfferFromOpp(false);
+  }
+
+  function handleDeclineDraw() {
+    socketRef.current?.declineDraw(matchId);
+    setDrawOfferFromOpp(false);
+  }
+
   async function handleHint() {
     if (hintLoading) return;
     if (matchType === 'ranked') {
@@ -489,7 +523,23 @@ export default function ChessBoard({ user }) {
         <button type="button" className="ck-board__resign" onClick={handleResign}>
           Resign
         </button>
+        <button
+          type="button"
+          className="ck-board__draw"
+          onClick={handleOfferDraw}
+          disabled={drawOfferSent || drawOfferFromOpp}
+        >
+          {drawOfferSent ? 'Draw sent…' : 'Offer draw'}
+        </button>
       </div>
+
+      {drawOfferFromOpp && (
+        <div className="ck-board__draw-banner">
+          <span>Opponent offers a draw</span>
+          <button type="button" onClick={handleAcceptDraw}>Accept</button>
+          <button type="button" onClick={handleDeclineDraw}>Decline</button>
+        </div>
+      )}
 
       <button
         type="button"

@@ -145,3 +145,44 @@
   background: var(--bg-primary, #0F1115);
   cursor: pointer;
 }
+
+.ck-board__draw {
+  background: transparent;
+  border: 1px solid var(--accent-gold, #D4AF37);
+  color: var(--accent-gold, #D4AF37);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.ck-board__draw:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ck-board__draw-banner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin: 8px 16px;
+  background: var(--bg-surface, #1A1D23);
+  border: 1px solid var(--accent-gold, #D4AF37);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.ck-board__draw-banner button {
+  background: var(--accent-gold, #D4AF37);
+  color: #0F1115;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ck-board__draw-banner button:last-child {
+  background: transparent;
+  color: var(--text-secondary, #9CA3AF);
+  border: 1px solid var(--border-subtle, #2A2E37);
+}

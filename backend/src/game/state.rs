@@ -26,6 +26,8 @@ pub struct MatchSession {
     pub black_ms: i64,
     /// When the current side-to-move's clock started ticking.
     pub turn_started_at: Instant,
+    /// User id of the side that offered a draw (waiting for reply).
+    pub pending_draw_from: Option<String>,
 }
 
 impl MatchSession {

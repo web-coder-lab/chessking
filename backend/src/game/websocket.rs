@@ -43,6 +43,9 @@ enum ClientMessage {
     ResumeMatch { match_id: String },
     Move { match_id: String, from: String, to: String, promotion: Option<String> },
     Resign { match_id: String },
+    OfferDraw { match_id: String },
+    AcceptDraw { match_id: String },
+    DeclineDraw { match_id: String },
     WebrtcSignal { match_id: String, payload: serde_json::Value },
     Heartbeat,
 }
@@ -260,6 +263,7 @@ async fn ensure_session_loaded(state: &AppState, match_id: &str) {
                 white_ms: DEFAULT_CLOCK_MS,
                 black_ms: DEFAULT_CLOCK_MS,
                 turn_started_at: Instant::now(),
+                pending_draw_from: None,
             },
         )
         .await;
@@ -337,6 +341,7 @@ async fn register_in_memory(state: &AppState, match_id: &str, white_id: &str, bl
         white_ms: DEFAULT_CLOCK_MS,
         black_ms: DEFAULT_CLOCK_MS,
         turn_started_at: Instant::now(),
+        pending_draw_from: None,
     }).await;
 }
 
@@ -357,6 +362,15 @@ async fn handle_client_message(
         }
         ClientMessage::Resign { .. } => {
             handle_resign(state, match_id, is_white).await;
+        }
+        ClientMessage::OfferDraw { .. } => {
+            handle_offer_draw(state, match_id, user_id).await;
+        }
+        ClientMessage::AcceptDraw { .. } => {
+            handle_accept_draw(state, match_id, user_id).await;
+        }
+        ClientMessage::DeclineDraw { .. } => {
+            handle_decline_draw(state, match_id, user_id).await;
         }
         ClientMessage::WebrtcSignal { payload, .. } => {
             // Doc 7 §5.2 step 2: relay SDP offers/answers/ICE candidates
@@ -519,6 +533,76 @@ async fn handle_move(
             _ => "checkmate",
         };
         let _ = finalize_match(&state.db, &state.match_registry, match_id, &white_id, &black_id, outcome, reason, &match_type).await;
+    }
+}
+
+
+async fn handle_offer_draw(state: &AppState, match_id: &str, user_id: &str) {
+    let ok = state.match_registry.with_session(match_id, |s| {
+        if s.pending_draw_from.as_deref() == Some(user_id) {
+            return false;
+        }
+        s.pending_draw_from = Some(user_id.to_string());
+        true
+    }).await;
+    if ok != Some(true) {
+        return;
+    }
+    if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
+        let _ = tx.send(json!({
+            "type": "draw_offered",
+            "from_user_id": user_id
+        }).to_string());
+    }
+}
+
+async fn handle_accept_draw(state: &AppState, match_id: &str, user_id: &str) {
+    let info = state.match_registry.with_session(match_id, |s| {
+        let pending = s.pending_draw_from.clone();
+        let can = pending.as_ref().map(|p| p != user_id).unwrap_or(false);
+        if can {
+            s.pending_draw_from = None;
+        }
+        (can, s.white_id.clone(), s.black_id.clone(), s.match_type.clone())
+    }).await;
+    let Some((true, white_id, black_id, match_type)) = info else {
+        return;
+    };
+    let _ = finalize_match(
+        &state.db,
+        &state.match_registry,
+        match_id,
+        &white_id,
+        &black_id,
+        super::engine::GameOutcome::Draw,
+        "agreement",
+        &match_type,
+    ).await;
+    if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
+        let _ = tx.send(json!({
+            "type": "match_ended",
+            "result": "draw",
+            "result_reason": "agreement"
+        }).to_string());
+    }
+}
+
+async fn handle_decline_draw(state: &AppState, match_id: &str, user_id: &str) {
+    let declined = state.match_registry.with_session(match_id, |s| {
+        if s.pending_draw_from.as_ref().map(|p| p != user_id).unwrap_or(false) {
+            s.pending_draw_from = None;
+            true
+        } else {
+            false
+        }
+    }).await;
+    if declined == Some(true) {
+        if let Some(tx) = state.match_registry.with_session(match_id, |s| s.events.clone()).await {
+            let _ = tx.send(json!({
+                "type": "draw_declined",
+                "by_user_id": user_id
+            }).to_string());
+        }
     }
 }
 

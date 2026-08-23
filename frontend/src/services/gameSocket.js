@@ -113,6 +113,18 @@ export class GameSocket {
     this.send({ type: 'resign', match_id: matchId });
   }
 
+  offerDraw(matchId) {
+    this.send({ type: 'offer_draw', match_id: matchId });
+  }
+
+  acceptDraw(matchId) {
+    this.send({ type: 'accept_draw', match_id: matchId });
+  }
+
+  declineDraw(matchId) {
+    this.send({ type: 'decline_draw', match_id: matchId });
+  }
+
   webrtcSignal(matchId, payload) {
     this.send({ type: 'webrtc_signal', match_id: matchId, payload });
   }
