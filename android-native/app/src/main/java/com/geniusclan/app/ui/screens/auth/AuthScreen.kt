@@ -3,6 +3,7 @@ package com.geniusclan.app.ui.screens.auth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,9 +42,13 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun AuthScreen(onLoggedIn: () -> Unit) {
+    var modeRegister by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var info by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -51,86 +56,113 @@ fun AuthScreen(onLoggedIn: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(GcBg)
-            .padding(horizontal = 24.dp, vertical = 32.dp),
+            .padding(horizontal = 24.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "♚", fontSize = 40.sp, color = GcGold)
         Text(
-            text = "Welcome back",
+            text = if (modeRegister) "Create account" else "Welcome back",
             color = GcText,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             modifier = Modifier.padding(top = 8.dp)
         )
         Text(
-            text = "Sign in to Genius Clan",
+            text = if (modeRegister) "Join Genius Clan" else "Sign in to continue",
             color = GcTextMuted,
             fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 28.dp)
+            modifier = Modifier.padding(bottom = 20.dp)
         )
 
-        GcField(
-            value = identifier,
-            onValueChange = { identifier = it; error = null },
-            label = "Username or email"
-        )
-        Spacer(Modifier.height(12.dp))
-        GcField(
-            value = password,
-            onValueChange = { password = it; error = null },
-            label = "Password",
-            password = true
-        )
-
-        if (error != null) {
-            Text(
-                text = error!!,
-                color = GcDanger,
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-            )
+        if (modeRegister) {
+            GcField(email, { email = it; error = null }, "Email")
+            Spacer(Modifier.height(10.dp))
+            GcField(username, { username = it; error = null }, "Username")
+            Spacer(Modifier.height(10.dp))
+            GcField(password, { password = it; error = null }, "Password", password = true)
+        } else {
+            GcField(identifier, { identifier = it; error = null }, "Username or email")
+            Spacer(Modifier.height(10.dp))
+            GcField(password, { password = it; error = null }, "Password", password = true)
         }
 
-        Spacer(Modifier.height(24.dp))
+        if (error != null) {
+            Text(text = error!!, color = GcDanger, fontSize = 13.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+        }
+        if (info != null) {
+            Text(text = info!!, color = GcGold, fontSize = 13.sp, modifier = Modifier.fillMaxWidth().padding(top = 10.dp))
+        }
+
+        Spacer(Modifier.height(20.dp))
         Button(
             onClick = {
-                if (identifier.isBlank() || password.isBlank()) {
-                    error = "Enter username and password"
-                    return@Button
-                }
                 loading = true
                 error = null
+                info = null
                 scope.launch {
                     val result = withContext(Dispatchers.IO) {
-                        ApiClient.login(identifier.trim(), password)
+                        if (modeRegister) {
+                            if (email.isBlank() || username.isBlank() || password.length < 6) {
+                                return@withContext Result.failure(Exception("Fill email, username, password (6+ chars)"))
+                            }
+                            ApiClient.register(username.trim(), email.trim(), password).mapCatching {
+                                ApiClient.login(username.trim(), password).getOrThrow()
+                            }
+                        } else {
+                            if (identifier.isBlank() || password.isBlank()) {
+                                return@withContext Result.failure(Exception("Enter username and password"))
+                            }
+                            ApiClient.login(identifier.trim(), password)
+                        }
                     }
                     loading = false
                     result.onSuccess { onLoggedIn() }
-                        .onFailure { error = it.message ?: "Login failed" }
+                        .onFailure { error = it.message ?: "Failed" }
                 }
             },
             enabled = !loading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
+            modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = GcGold,
-                contentColor = GcBg
-            )
+            colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
         ) {
             Text(
-                text = if (loading) "Signing in…" else "Sign in",
+                text = when {
+                    loading -> "Please wait…"
+                    modeRegister -> "Create account"
+                    else -> "Sign in"
+                },
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp
             )
         }
 
-        TextButton(onClick = { /* Phase 3: register */ }) {
-            Text(text = "Create account — Phase 3", color = GcTextMuted)
+        TextButton(onClick = {
+            modeRegister = !modeRegister
+            error = null
+            info = null
+        }) {
+            Text(
+                text = if (modeRegister) "Already have an account? Sign in" else "Create account",
+                color = GcTextMuted
+            )
+        }
+
+        if (modeRegister) {
+            TextButton(onClick = {
+                if (email.isBlank()) {
+                    error = "Enter email first"
+                    return@TextButton
+                }
+                loading = true
+                scope.launch {
+                    val r = withContext(Dispatchers.IO) { ApiClient.registerIntent(email.trim()) }
+                    loading = false
+                    r.onSuccess { info = it }.onFailure { error = it.message }
+                }
+            }) {
+                Text(text = "Or email invite signup", color = GcGold, fontSize = 13.sp)
+            }
         }
     }
 }

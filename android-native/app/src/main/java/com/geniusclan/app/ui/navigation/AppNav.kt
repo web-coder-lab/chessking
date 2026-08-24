@@ -6,8 +6,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.geniusclan.app.ui.screens.auth.AuthScreen
 import com.geniusclan.app.ui.screens.home.HomeScreen
+import com.geniusclan.app.ui.screens.profile.ProfileScreen
 import com.geniusclan.app.ui.screens.splash.ServerGateScreen
 import com.geniusclan.app.ui.screens.splash.SplashScreen
+import com.geniusclan.app.ui.screens.wallet.WalletScreen
 
 @Composable
 fun AppNav() {
@@ -50,28 +52,23 @@ fun AppNav() {
         composable(Routes.PLAY) {
             HomeScreen(
                 title = "Play",
-                subtitle = "Matchmaking UI — Phase 4",
+                subtitle = "Matchmaking + board — Phase 4",
                 onPlay = {},
                 onWallet = { nav.navigate(Routes.WALLET) },
                 onProfile = { nav.navigate(Routes.PROFILE) }
             )
         }
         composable(Routes.WALLET) {
-            HomeScreen(
-                title = "Wallet",
-                subtitle = "Coins & payments — Phase 3",
-                onPlay = { nav.navigate(Routes.PLAY) },
-                onWallet = {},
-                onProfile = { nav.navigate(Routes.PROFILE) }
-            )
+            WalletScreen(onBack = { nav.popBackStack() })
         }
         composable(Routes.PROFILE) {
-            HomeScreen(
-                title = "Profile",
-                subtitle = "Edit profile — Phase 3",
-                onPlay = { nav.navigate(Routes.PLAY) },
-                onWallet = { nav.navigate(Routes.WALLET) },
-                onProfile = {}
+            ProfileScreen(
+                onBack = { nav.popBackStack() },
+                onLogout = {
+                    nav.navigate(Routes.AUTH) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
     }
