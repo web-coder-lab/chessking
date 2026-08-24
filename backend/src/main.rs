@@ -225,26 +225,59 @@ async fn health() -> &'static str {
     "ok"
 }
 
-/// Mobile / APK clients: discover base API (no HTML frontend on this host).
+/// Native Android (Jetpack Compose) + any API client — no HTML site on this host.
 async fn api_v1_root() -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
         "name": "Genius Clan API",
         "version": "v1",
-        "mode": "api_only",
+        "mode": "api_only_native",
+        "client": "android_compose",
+        "base": "https://genius-clan-api.onrender.com",
         "health": "/health",
+        "note": "CORS is for browsers only; native OkHttp/Ktor does not need CORS",
         "auth": {
-            "login": "POST /api/v1/auth/login",
             "register_intent": "POST /api/v1/auth/register-intent",
             "complete_signup": "POST /api/v1/auth/complete-signup",
+            "login": "POST /api/v1/auth/login",
+            "login_2fa": "POST /api/v1/auth/login/2fa",
             "refresh": "POST /api/v1/auth/refresh",
-            "logout": "POST /api/v1/auth/logout"
+            "logout": "POST /api/v1/auth/logout",
+            "forgot_password": "POST /api/v1/auth/forgot-password",
+            "reset_password": "POST /api/v1/auth/reset-password",
+            "enable_2fa": "POST /api/v1/auth/2fa/enable",
+            "disable_2fa": "POST /api/v1/auth/2fa/disable"
+        },
+        "profile": {
+            "me": "GET /api/v1/profile/me",
+            "update_me": "PATCH /api/v1/profile/me",
+            "password": "POST /api/v1/profile/me/password",
+            "email": "POST /api/v1/profile/me/email",
+            "public": "GET /api/v1/profile/:username"
+        },
+        "wallet": {
+            "balance": "GET /api/v1/wallet/balance",
+            "packages": "GET /api/v1/wallet/packages",
+            "deposit": "POST /api/v1/wallet/deposit/initiate",
+            "deposit_status": "GET /api/v1/wallet/deposit/:id"
+        },
+        "shop": {
+            "items": "GET /api/v1/shop/items",
+            "purchase": "POST /api/v1/shop/purchase",
+            "inventory": "GET /api/v1/inventory",
+            "equip": "POST /api/v1/inventory/equip"
         },
         "game": {
-            "ws_queue": "WS /api/v1/match/queue?token=ACCESS",
-            "ws_match": "WS /api/v1/ws/match/:match_id?token=ACCESS",
-            "match": "GET /api/v1/match/:match_id"
+            "ws_queue": "WSS /api/v1/match/queue?token=ACCESS_JWT",
+            "ws_match": "WSS /api/v1/ws/match/:match_id?token=ACCESS_JWT",
+            "match": "GET /api/v1/match/:match_id",
+            "hint": "POST /api/v1/match/:match_id/hint",
+            "custom_invite": "POST /api/v1/custom-match/invite"
         },
-        "docs": "See API_MOBILE.md in repository"
+        "social": {
+            "leaderboard": "GET /api/v1/leaderboard",
+            "notifications": "GET /api/v1/notifications"
+        },
+        "docs": "NATIVE_API.md"
     }))
 }
 
