@@ -1,0 +1,83 @@
+.ck-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  max-width: 430px;
+  margin: 0 auto;
+}
+.ck-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+.ck-confirm__card {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+  background: linear-gradient(180deg, #1A1D23 0%, #14161b 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-top: 3px solid #D4AF37;
+  border-radius: 16px;
+  padding: 28px 22px 20px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.ck-confirm__icon {
+  font-size: 36px;
+  line-height: 1;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 12px rgba(212, 175, 55, 0.35));
+}
+.ck-confirm__brand {
+  margin: 0 0 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: #D4AF37;
+}
+.ck-confirm__title {
+  margin: 0 0 10px;
+  font-family: var(--font-display, 'Poppins', sans-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: #F5F5F5;
+}
+.ck-confirm__body {
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #9CA3AF;
+}
+.ck-confirm__actions {
+  display: flex;
+  gap: 10px;
+}
+.ck-confirm__btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+}
+.ck-confirm__btn--ghost {
+  background: transparent;
+  border: 1px solid #2A2E37;
+  color: #F5F5F5;
+}
+.ck-confirm__btn--primary {
+  background: #D4AF37;
+  color: #0F1115;
+}
+.ck-confirm__btn--danger {
+  background: #E74C3C;
+  color: #fff;
+}

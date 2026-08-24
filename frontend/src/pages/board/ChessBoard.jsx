@@ -9,6 +9,7 @@ import { gameApi, giftsApi } from '../../services/api';
 import GiftPicker from '../../components/gifts/GiftPicker';
 import GiftAnimation from '../../components/gifts/GiftAnimation';
 import Toast from '../../components/common/Toast';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import './ChessBoard.css';
 import { soundMove, soundCapture, soundCheck, soundGameEnd, soundDrawOffer } from '../../utils/gameSounds';
 import { VoiceChannel } from '../../utils/voiceChannel';
@@ -63,6 +64,8 @@ export default function ChessBoard({ user }) {
   const [micOn, setMicOn] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
   const [micError, setMicError] = useState('');
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const allowLeaveRef = useRef(false);
   const isInitiatorRef = useRef(!!location.state?.socket); // queue handoff side often has socket
   const countdownRef = useRef(null);
   const myColorRef = useRef(location.state?.color || 'white');
@@ -288,6 +291,42 @@ export default function ChessBoard({ user }) {
       voiceRef.current = null;
     };
   }, [matchId, accessToken, applyServerFen, user?.username]);
+
+  // Trap browser / Android back during live match
+  useEffect(() => {
+    if (matchEnded) return undefined;
+    const onPop = (e) => {
+      if (allowLeaveRef.current) return;
+      // Re-push so we stay on board until user confirms
+      window.history.pushState({ chessGuard: true }, '');
+      setLeaveConfirmOpen(true);
+    };
+    window.history.pushState({ chessGuard: true }, '');
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [matchId, matchEnded]);
+
+  function requestLeave() {
+    if (matchEnded) {
+      navigate('/play');
+      return;
+    }
+    setLeaveConfirmOpen(true);
+  }
+
+  function confirmLeave() {
+    allowLeaveRef.current = true;
+    setLeaveConfirmOpen(false);
+    try {
+      socketRef.current?.resign(matchId);
+    } catch (_) {}
+    voiceRef.current?.stop();
+    navigate('/play', { replace: true });
+  }
+
+  function cancelLeave() {
+    setLeaveConfirmOpen(false);
+  }
 
   // Client-side clocks (display). Server authority = Phase 5.
   useEffect(() => {
@@ -558,6 +597,9 @@ export default function ChessBoard({ user }) {
       )}
 
       <div className="ck-board__info-bar">
+        <button type="button" className="ck-board__back" onClick={requestLeave} aria-label="Go back">
+          ←
+        </button>
         <span className="ck-board__info-avatar" aria-hidden>
           👤
         </span>
@@ -700,6 +742,17 @@ export default function ChessBoard({ user }) {
       {toast && (
         <Toast message={toast.message} visible={!!toast} onDismiss={() => setToast(null)} />
       )}
+
+      <ConfirmDialog
+        open={leaveConfirmOpen}
+        title="Leave this match?"
+        message="If you leave now, the game may count as a disconnect or loss. Are you sure you want to go back?"
+        confirmLabel="OK"
+        cancelLabel="Cancel"
+        danger
+        onConfirm={confirmLeave}
+        onCancel={cancelLeave}
+      />
     </div>
   );
 }

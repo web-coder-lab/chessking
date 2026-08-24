@@ -115,3 +115,27 @@
 .ck-play-radar {
   color: var(--accent-gold);
 }
+
+.ck-play__option-card {
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent-gold);
+  background: linear-gradient(135deg, var(--bg-surface) 0%, #16191f 100%);
+}
+.ck-play__option-card:hover {
+  border-color: var(--accent-gold-border);
+}
+.ck-play-radar {
+  font-size: 64px;
+  animation: ck-radar-pulse 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.35));
+}
+@keyframes ck-radar-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+.ck-vs-label {
+  font-family: var(--font-display);
+  color: var(--accent-gold);
+  font-weight: 700;
+  letter-spacing: 2px;
+}

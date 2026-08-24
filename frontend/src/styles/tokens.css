@@ -46,6 +46,8 @@
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-pill: 999px; /* central Play button */
+  --radius-modal: 16px;
+  --shadow-modal: 0 16px 40px rgba(0, 0, 0, 0.55);
 
   --screen-padding-x: 16px;
 
