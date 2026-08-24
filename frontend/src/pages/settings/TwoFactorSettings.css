@@ -1,0 +1,58 @@
+.ck-2fa {
+  min-height: 100dvh;
+  background: var(--bg-primary);
+  padding: var(--space-4) var(--screen-padding-x) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 430px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.ck-2fa__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ck-2fa__back {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--accent-gold);
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ck-2fa__badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ck-2fa__badge--on {
+  border-color: var(--success-green);
+  color: var(--success-green);
+  background: var(--success-soft);
+}
+.ck-2fa__desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ck-2fa__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ck-2fa__error {
+  margin: 0;
+  color: var(--danger-red);
+  font-size: 13px;
+}

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ServerGate from './components/server/ServerGate';
 import Splash from './pages/splash/Splash';
 import AuthScreen from './pages/auth/AuthScreen';
 import ResetPasswordScreen from './pages/auth/ResetPasswordScreen';
@@ -95,7 +96,9 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <ServerGate>
+            <AppRoutes />
+          </ServerGate>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

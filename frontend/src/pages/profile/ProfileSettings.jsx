@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
+import Toast from '../../components/common/Toast';
 import { socialApi } from '../../services/api';
-import './Profile.css';
+import { avatarEmoji } from '../../utils/avatar';
+import './ProfileSettings.css';
 
 export default function ProfileSettings({ user }) {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ export default function ProfileSettings({ user }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [emailChangeSent, setEmailChangeSent] = useState(false);
+  const [toast, setToast] = useState(null);
 
   async function handleSave() {
     setSaving(true);
@@ -26,52 +29,91 @@ export default function ProfileSettings({ user }) {
       if (currentPassword && newEmail) {
         await socialApi.changeEmail(currentPassword, newEmail);
         setEmailChangeSent(true);
-      }
-      if (!(currentPassword && newEmail)) {
-        navigate('/profile');
+        setToast({ message: 'Check your new email for a confirmation link' });
+      } else {
+        setToast({ message: 'Profile saved' });
+        setTimeout(() => navigate('/profile'), 700);
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Could not save');
     } finally {
       setSaving(false);
     }
   }
 
-  return (
-    <div className="ck-profile" style={{ padding: 'var(--space-6) var(--screen-padding-x)' }}>
-      <h1 className="page-title" style={{ marginBottom: 'var(--space-6)' }}>Edit Profile</h1>
+  const avatar = avatarEmoji(user?.avatar_id);
 
-      <button className="ck-profile__avatar" style={{ margin: '0 0 var(--space-4)' }} onClick={() => navigate('/inventory?category=avatar')}>
-        <img src="/assets/default-avatar.svg" alt="" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+  return (
+    <div className="ck-edit-profile">
+      <header className="ck-edit-profile__header">
+        <button type="button" className="ck-edit-profile__back" onClick={() => navigate('/profile')} aria-label="Back">
+          ←
+        </button>
+        <h1 className="page-title">Edit Profile</h1>
+      </header>
+
+      <button
+        type="button"
+        className="ck-edit-profile__avatar"
+        onClick={() => navigate('/inventory?category=avatar')}
+      >
+        <span style={{ fontSize: 40 }}>{typeof avatar === 'string' && avatar.length < 4 ? avatar : '👤'}</span>
+        <span className="ck-edit-profile__avatar-hint">Change avatar</span>
       </button>
 
-      <div className="ck-input-group">
-        <label className="ck-input-label" htmlFor="bio">Bio</label>
-        <textarea
-          id="bio"
-          className="ck-input"
-          style={{ width: '100%', minHeight: 80, background: 'var(--bg-surface)', border: '1.5px solid var(--border-subtle)', borderRadius: 'var(--radius-button)', padding: 'var(--space-3)' }}
-          value={bio}
-          maxLength={300}
-          onChange={(e) => setBio(e.target.value)}
-        />
-        <span className="text-secondary" style={{ fontSize: 'var(--text-caption-size)' }}>{bio.length}/300</span>
-      </div>
+      <label className="ck-edit-profile__label" htmlFor="bio">Bio</label>
+      <textarea
+        id="bio"
+        className="ck-edit-profile__bio"
+        value={bio}
+        maxLength={300}
+        onChange={(e) => setBio(e.target.value)}
+        placeholder="Tell others about you…"
+      />
+      <span className="ck-edit-profile__count">{bio.length}/300</span>
 
-      <h2 className="section-heading" style={{ margin: 'var(--space-4) 0' }}>Change Email</h2>
+      <h2 className="section-heading">Change email</h2>
       {emailChangeSent ? (
         <p className="text-secondary">
-          Check <strong style={{ color: 'var(--text-primary)' }}>{newEmail}</strong> for a confirmation link. Your account still uses {user?.email} until you click it.
+          Check <strong style={{ color: 'var(--text-primary)' }}>{newEmail}</strong> for a link.
+          Account still uses {user?.email} until confirmed.
         </p>
       ) : (
-        <Input id="new-email" type="email" placeholder="New Email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} autoComplete="email" />
+        <Input
+          id="new-email"
+          type="email"
+          placeholder="New email"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          autoComplete="email"
+        />
       )}
 
-      <h2 className="section-heading" style={{ margin: 'var(--space-4) 0' }}>Change Password</h2>
-      <Input id="current-password" type="password" placeholder="Current Password (needed for email or password changes)" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} autoComplete="current-password" />
-      <Input id="new-password" type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} error={error} autoComplete="new-password" />
+      <h2 className="section-heading">Change password</h2>
+      <Input
+        id="current-password"
+        type="password"
+        placeholder="Current password (for email/password changes)"
+        value={currentPassword}
+        onChange={(e) => setCurrentPassword(e.target.value)}
+        autoComplete="current-password"
+      />
+      <Input
+        id="new-password"
+        type="password"
+        placeholder="New password"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        autoComplete="new-password"
+      />
 
-      <Button onClick={handleSave} loading={saving} loadingLabel="Saving...">Save</Button>
+      {error && <p className="ck-edit-profile__error">{error}</p>}
+
+      <Button onClick={handleSave} loading={saving} loadingLabel="Saving…">
+        Save
+      </Button>
+
+      <Toast visible={!!toast} message={toast?.message} onDismiss={() => setToast(null)} />
     </div>
   );
 }

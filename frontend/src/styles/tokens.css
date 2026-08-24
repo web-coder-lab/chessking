@@ -76,6 +76,10 @@
   box-sizing: border-box;
 }
 
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
 body {
   margin: 0;
   background: var(--bg-primary);
@@ -90,7 +94,12 @@ body {
   margin-right: auto;
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
+img, video, canvas {
+  max-width: 100%;
+}
+
 
 h1.page-title {
   font-family: var(--font-display);

@@ -4,6 +4,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
 import { authApi } from '../../services/api';
+import './TwoFactorSettings.css';
 
 export default function TwoFactorSettings({ user, refreshUser }) {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function TwoFactorSettings({ user, refreshUser }) {
       setError('Codes do not match');
       return;
     }
-    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+    if (!/^\d{6}$/.test(code)) {
       setError('Enter a 6-digit code');
       return;
     }
@@ -32,9 +33,9 @@ export default function TwoFactorSettings({ user, refreshUser }) {
       await authApi.enable2FA(password, code, confirmCode);
       await refreshUser?.();
       setToast({ message: 'Two-step verification is on' });
-      setTimeout(() => navigate('/settings'), 1000);
-    } catch (e) {
-      setError(e.message || 'Could not enable 2FA');
+      setTimeout(() => navigate('/settings'), 900);
+    } catch (err) {
+      setError(err.message || 'Could not enable 2FA');
     } finally {
       setSubmitting(false);
     }
@@ -48,54 +49,68 @@ export default function TwoFactorSettings({ user, refreshUser }) {
       await authApi.disable2FA(password, code);
       await refreshUser?.();
       setToast({ message: 'Two-step verification is off' });
-      setTimeout(() => navigate('/settings'), 1000);
-    } catch (e) {
-      setError(e.message || 'Could not disable 2FA');
+      setTimeout(() => navigate('/settings'), 900);
+    } catch (err) {
+      setError(err.message || 'Could not disable 2FA');
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div style={{ padding: 'var(--space-6) var(--screen-padding-x)' }}>
-      <h1 className="page-title" style={{ marginBottom: 'var(--space-2)' }}>Two-Step Verification</h1>
-      <p className="text-secondary" style={{ marginBottom: 'var(--space-6)' }}>
+    <div className="ck-2fa">
+      <header className="ck-2fa__header">
+        <button type="button" className="ck-2fa__back" onClick={() => navigate('/settings')} aria-label="Back">
+          ←
+        </button>
+        <h1 className="page-title">Two-Step Verification</h1>
+      </header>
+
+      <div className={`ck-2fa__badge ${enabled ? 'ck-2fa__badge--on' : ''}`}>
+        {enabled ? 'Enabled' : 'Disabled'}
+      </div>
+
+      <p className="ck-2fa__desc">
         {enabled
-          ? 'Enter your password and current code to turn this off.'
-          : 'Choose a 6-digit code. You\'ll enter it (alongside your password) whenever you log in from a new device.'}
+          ? 'Turn off by entering your password and your 6-digit code.'
+          : 'Create a 6-digit code. You will need it when signing in on a new device.'}
       </p>
 
-      <form onSubmit={enabled ? handleDisable : handleEnable}>
+      <form className="ck-2fa__form" onSubmit={enabled ? handleDisable : handleEnable}>
         <Input
-          id="current-password"
+          id="2fa-password"
           type="password"
-          label="Current Password"
+          label="Current password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
         />
         <Input
-          id="code"
+          id="2fa-code"
           type="text"
           inputMode="numeric"
-          label={enabled ? 'Current 6-Digit Code' : 'New 6-Digit Code'}
+          label={enabled ? 'Your 6-digit code' : 'Choose a 6-digit code'}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          maxLength={6}
+          required
         />
         {!enabled && (
           <Input
-            id="confirm-code"
+            id="2fa-confirm"
             type="text"
             inputMode="numeric"
-            label="Confirm Code"
+            label="Confirm code"
             value={confirmCode}
             onChange={(e) => setConfirmCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            error={error}
+            maxLength={6}
+            required
           />
         )}
-        {enabled && error && <p style={{ color: 'var(--danger-red)', fontSize: 'var(--text-caption-size)' }}>{error}</p>}
-
-        <Button type="submit" variant={enabled ? 'destructive' : 'primary'} loading={submitting} loadingLabel="Saving...">
-          {enabled ? 'Turn Off' : 'Turn On'}
+        {error && <p className="ck-2fa__error">{error}</p>}
+        <Button type="submit" loading={submitting} loadingLabel="Please wait…">
+          {enabled ? 'Turn off' : 'Turn on'}
         </Button>
       </form>
 

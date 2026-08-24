@@ -103,3 +103,39 @@
   border: 3px solid var(--accent-gold) !important;
   background: var(--bg-surface) !important;
 }
+
+.ck-profile__header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  position: relative;
+}
+.ck-profile__header-row .page-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.ck-profile__edit-btn {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ck-profile__bio {
+  margin: 0;
+  word-break: break-word;
+}
+.ck-profile__stats {
+  position: relative;
+  z-index: 1;
+}

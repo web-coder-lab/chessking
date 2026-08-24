@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TopBar from '../../components/navigation/TopBar';
-import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Toast from '../../components/common/Toast';
@@ -16,13 +15,6 @@ const GATEWAYS = [
 
 const POLL_INTERVAL_MS = 3000;
 
-/**
- * Doc 5 §2: select amount -> select gateway -> POST initiate -> redirect
- * to gateway -> frontend polls transaction status until success/failed.
- * Reached from Wallet either with a package pre-selected (location.state
- * .amountPkr) or via the plain "Add Coins" button (no pre-selected amount,
- * so this screen collects a custom one).
- */
 export default function Checkout({ user }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +27,6 @@ export default function Checkout({ user }) {
   const [phoneError, setPhoneError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
-  // phase: 'form' | 'pending' | 'success' | 'failed'
   const [phase, setPhase] = useState('form');
   const [coinsCredited, setCoinsCredited] = useState(null);
   const pollTimer = useRef(null);
@@ -51,7 +42,9 @@ export default function Checkout({ user }) {
 
   function validatePhone(raw) {
     const digits = raw.replace(/\D/g, '');
-    const looksValid = (digits.length === 11 && digits.startsWith('03')) || (digits.length === 12 && digits.startsWith('923'));
+    const looksValid =
+      (digits.length === 11 && digits.startsWith('03')) ||
+      (digits.length === 12 && digits.startsWith('923'));
     return looksValid ? '' : 'Enter a valid number, e.g. 03XXXXXXXXX';
   }
 
@@ -73,7 +66,11 @@ export default function Checkout({ user }) {
 
     setSubmitting(true);
     try {
-      const resp = await walletApi.initiateDeposit(Number(amountPkr), gateway, requiresPhone ? phone : undefined);
+      const resp = await walletApi.initiateDeposit(
+        Number(amountPkr),
+        gateway,
+        requiresPhone ? phone : undefined
+      );
       setPhase('pending');
       if (resp.redirect_url) {
         window.open(resp.redirect_url, '_blank', 'noopener,noreferrer');
@@ -100,24 +97,28 @@ export default function Checkout({ user }) {
         } else if (s.status === 'failed') {
           setPhase('failed');
         } else {
-          pollStatus(transactionId); // still pending — keep polling
+          pollStatus(transactionId);
         }
-      } catch (e) {
-        pollStatus(transactionId); // transient network hiccup — keep trying
+      } catch {
+        pollStatus(transactionId);
       }
     }, POLL_INTERVAL_MS);
   }
 
   return (
     <div className="ck-checkout">
-      <TopBar avatarUser={user} coinBalance={user?.coin_balance ?? 0} onBellClick={() => navigate('/notifications')} />
+      <TopBar
+        avatarUser={user}
+        coinBalance={user?.coin_balance ?? 0}
+        onBellClick={() => navigate('/notifications')}
+      />
 
       <main className="ck-checkout__body">
         <h1 className="page-title">Add Coins</h1>
 
         {phase === 'form' && (
           <>
-            <Card className="ck-checkout__amount-card">
+            <div className="ck-checkout__amount-card">
               <span className="text-secondary">Amount (PKR)</span>
               <Input
                 id="amount"
@@ -125,48 +126,66 @@ export default function Checkout({ user }) {
                 inputMode="numeric"
                 placeholder="e.g. 500"
                 value={amountPkr}
-                onChange={(e) => { setAmountPkr(e.target.value); setAmountError(''); }}
+                onChange={(e) => {
+                  setAmountPkr(e.target.value);
+                  setAmountError('');
+                }}
                 error={amountError}
                 disabled={!!preselected}
               />
-            </Card>
+            </div>
 
             <section>
-              <h2 className="section-heading" style={{ margin: 'var(--space-4) 0 var(--space-3)' }}>
-                Payment Method
-              </h2>
+              <p className="ck-checkout__section-title">Payment method</p>
               <div className="ck-checkout__gateway-list">
                 {GATEWAYS.map((g) => (
-                  <Card
+                  <button
+                    type="button"
                     key={g.id}
+                    className={`ck-checkout__gateway-row ${
+                      gateway === g.id ? 'ck-checkout__gateway-row--selected' : ''
+                    }`}
                     onClick={() => setGateway(g.id)}
-                    className={`ck-checkout__gateway-row ${gateway === g.id ? 'ck-checkout__gateway-row--selected' : ''}`}
                   >
                     <span aria-hidden="true">{g.icon}</span>
                     <span>{g.label}</span>
-                    {gateway === g.id && <span className="ck-checkout__check" aria-hidden="true">✓</span>}
-                  </Card>
+                    {gateway === g.id && (
+                      <span className="ck-checkout__check" aria-hidden="true">
+                        ✓
+                      </span>
+                    )}
+                  </button>
                 ))}
               </div>
             </section>
 
             {requiresPhone && (
-              <Card className="ck-checkout__amount-card">
-                <span className="text-secondary">{gateway === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} Number</span>
+              <div className="ck-checkout__amount-card">
+                <span className="text-secondary">
+                  {gateway === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} number
+                </span>
                 <Input
                   id="payer-phone"
                   type="tel"
                   inputMode="numeric"
                   placeholder="03XXXXXXXXX"
                   value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setPhoneError(''); }}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setPhoneError('');
+                  }}
                   error={phoneError}
                 />
-              </Card>
+              </div>
             )}
 
-            <Button onClick={handlePay} loading={submitting} loadingLabel="Starting...">
-              Pay Now
+            <Button
+              className="ck-checkout__pay"
+              onClick={handlePay}
+              loading={submitting}
+              loadingLabel="Starting…"
+            >
+              Pay now
             </Button>
           </>
         )}
@@ -174,40 +193,39 @@ export default function Checkout({ user }) {
         {phase === 'pending' && (
           <div className="ck-checkout__status">
             <span className="ck-spinner ck-spinner--lg" aria-hidden="true" />
-            <p>Waiting for payment confirmation...</p>
-            <p className="text-secondary ck-checkout__status-hint">
-              Complete the payment in the window that opened. This updates
-              automatically once it's confirmed.
+            <p>Waiting for payment confirmation…</p>
+            <p className="ck-checkout__status-hint">
+              Complete payment in the opened window. This updates automatically.
             </p>
           </div>
         )}
 
         {phase === 'success' && (
           <div className="ck-checkout__status">
-            <span className="ck-checkout__status-icon" aria-hidden="true">🎉</span>
+            <span className="ck-checkout__status-icon" aria-hidden="true">
+              🎉
+            </span>
             <p>
               {coinsCredited != null
                 ? `${coinsCredited.toLocaleString()} coins added!`
                 : 'Payment confirmed!'}
             </p>
-            <Button onClick={() => navigate('/wallet')}>Back to Wallet</Button>
+            <Button onClick={() => navigate('/wallet')}>Back to wallet</Button>
           </div>
         )}
 
         {phase === 'failed' && (
           <div className="ck-checkout__status">
-            <span className="ck-checkout__status-icon" aria-hidden="true">⚠️</span>
-            <p>Payment didn't go through.</p>
-            <Button onClick={() => setPhase('form')}>Try Again</Button>
+            <span className="ck-checkout__status-icon" aria-hidden="true">
+              ⚠️
+            </span>
+            <p>Payment didn&apos;t go through.</p>
+            <Button onClick={() => setPhase('form')}>Try again</Button>
           </div>
         )}
       </main>
 
-      <Toast
-        visible={!!toast}
-        message={toast?.message}
-        onDismiss={() => setToast(null)}
-      />
+      <Toast visible={!!toast} message={toast?.message} onDismiss={() => setToast(null)} />
     </div>
   );
 }
