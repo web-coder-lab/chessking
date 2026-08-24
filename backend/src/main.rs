@@ -127,6 +127,7 @@ async fn main() -> anyhow::Result<()> {
     // load-balancer health checks never get 429'd.
     let auth_public = auth::public_routes().layer(auth_governor_layer);
     let api_v1 = Router::new()
+        .route("/", get(api_v1_root))
         .merge(auth_public)
         .merge(wallet::public_routes())
         .merge(game::public_routes())
@@ -135,14 +136,20 @@ async fn main() -> anyhow::Result<()> {
         .merge(protected)
         .layer(governor_layer);
 
-    // Phase 4 firewalls: CORS locked to known frontends (not Reflect Any).
+    // API-only server: CORS for optional web SPA + Capacitor/Android WebView.
     let frontend = state.config.frontend_base_url.trim_end_matches('/').to_string();
     let mut origins = vec![
         frontend.clone(),
         "http://localhost:5173".into(),
         "http://127.0.0.1:5173".into(),
         "https://genius-clan.onrender.com".into(),
+        "https://localhost".into(),
+        "capacitor://localhost".into(),
+        "http://localhost".into(),
     ];
+    for o in &state.config.cors_extra_origins {
+        origins.push(o.trim_end_matches('/').to_string());
+    }
     origins.sort();
     origins.dedup();
     let origin_list: Vec<HeaderValue> = origins
@@ -216,6 +223,29 @@ async fn main() -> anyhow::Result<()> {
 
 async fn health() -> &'static str {
     "ok"
+}
+
+/// Mobile / APK clients: discover base API (no HTML frontend on this host).
+async fn api_v1_root() -> axum::Json<serde_json::Value> {
+    axum::Json(serde_json::json!({
+        "name": "Genius Clan API",
+        "version": "v1",
+        "mode": "api_only",
+        "health": "/health",
+        "auth": {
+            "login": "POST /api/v1/auth/login",
+            "register_intent": "POST /api/v1/auth/register-intent",
+            "complete_signup": "POST /api/v1/auth/complete-signup",
+            "refresh": "POST /api/v1/auth/refresh",
+            "logout": "POST /api/v1/auth/logout"
+        },
+        "game": {
+            "ws_queue": "WS /api/v1/match/queue?token=ACCESS",
+            "ws_match": "WS /api/v1/ws/match/:match_id?token=ACCESS",
+            "match": "GET /api/v1/match/:match_id"
+        },
+        "docs": "See API_MOBILE.md in repository"
+    }))
 }
 
 /// Durable-store probe: confirms private GitHub repo is reachable.

@@ -1,11 +1,7 @@
-# Genius Clan — Render Blueprint (free tier where possible)
-# Docs: https://render.com/docs/blueprint-spec
-#
-# Phase 1: API + static frontend
-# Phase 3: attach persistent Postgres / disk (SQLite on free disk is optional)
+# Genius Clan — API-only server (mobile / APK clients)
+# Frontend is NOT served from this service. Static web (optional) is separate.
 
 services:
-  # ---------- API (Rust) ----------
   - type: web
     name: genius-clan-api
     runtime: docker
@@ -22,36 +18,24 @@ services:
       - key: DATABASE_URL
         value: sqlite:///data/genius_clan.db
       - key: FRONTEND_BASE_URL
-        # Update after static site is live
+        # Optional web SPA; APK uses Capacitor origin
         value: https://genius-clan.onrender.com
       - key: JWT_ACCESS_TTL_MIN
         value: "15"
       - key: JWT_REFRESH_TTL_DAYS
         value: "30"
+      - key: CORS_EXTRA_ORIGINS
+        # Capacitor / local Android WebView origins (comma-separated)
+        value: "https://localhost,capacitor://localhost,http://localhost,http://localhost:5173"
       - key: SMTP_HOST
         value: ""
       - key: SMTP_USER
         value: ""
       - key: SMTP_PASS
         value: ""
-    # Free tier: no persistent disk by default — SQLite resets on restart.
-    # Phase 3: add a disk or switch DATABASE_URL to Render Postgres.
 
-  # ---------- Frontend (static) ----------
-  - type: web
-    name: genius-clan
-    runtime: static
-    plan: free
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    envVars:
-      - key: VITE_API_BASE
-        # Set to your API URL after first deploy, e.g. https://genius-clan-api.onrender.com
-        value: https://genius-clan-api.onrender.com
-      - key: VITE_WS_BASE
-        value: wss://genius-clan-api.onrender.com
+  # Optional public web SPA — disable/delete this service if APK-only.
+  # - type: web
+  #   name: genius-clan
+  #   runtime: static
+  #   ...

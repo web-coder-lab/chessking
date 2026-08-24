@@ -20,6 +20,8 @@ pub struct AppConfig {
     pub port: u16,
     /// Comma-separated IPs or CIDRs. Empty = public API. Non-empty = only these IPs can call API.
     pub ip_allowlist: Vec<String>,
+    /// Extra CORS origins (Capacitor, local APK WebView). Comma-separated env CORS_EXTRA_ORIGINS.
+    pub cors_extra_origins: Vec<String>,
 }
 
 impl AppConfig {
@@ -53,6 +55,14 @@ impl AppConfig {
                 .parse()?,
             ip_allowlist: env::var("IP_ALLOWLIST")
                 .unwrap_or_default()
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            cors_extra_origins: env::var("CORS_EXTRA_ORIGINS")
+                .unwrap_or_else(|_| {
+                    "https://localhost,capacitor://localhost,http://localhost,http://localhost:5173".into()
+                })
                 .split(',')
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
