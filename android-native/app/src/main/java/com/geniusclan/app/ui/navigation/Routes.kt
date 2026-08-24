@@ -7,10 +7,8 @@ object Routes {
     const val HOME = "home"
     const val PLAY = "play"
     const val WALLET = "wallet"
-    const val SHOP = "shop"
     const val PROFILE = "profile"
-    const val SETTINGS = "settings"
-    const val BOARD = "board/{matchId}"
+    const val BOARD = "board/{matchId}/{color}"
 
-    fun board(matchId: String) = "board/$matchId"
+    fun board(matchId: String, color: String) = "board/$matchId/$color"
 }
