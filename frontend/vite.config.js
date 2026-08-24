@@ -16,6 +16,7 @@ import react from '@vitejs/plugin-react';
 //   the one Vite listens on internally (common on tunnels/cloud IDEs).
 //   Falls back to the same port when nothing overrides it.
 export default defineConfig({
+  base: './',
   plugins: [react()],
   server: {
     host: '0.0.0.0',

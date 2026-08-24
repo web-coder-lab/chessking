@@ -169,3 +169,13 @@ h2.section-heading {
   opacity: var(--disabled-opacity);
   cursor: not-allowed;
 }
+
+
+/* Phase 1 — native Android shell */
+.ck-native body,
+body.ck-native {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  max-width: none;
+  min-width: 0;
+}
