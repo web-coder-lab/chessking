@@ -1,9 +1,4 @@
-const WS_BASE = (
-  import.meta.env?.VITE_WS_BASE
-  || (typeof window !== 'undefined' && window.location?.hostname?.includes('onrender.com')
-        ? 'wss://genius-clan-api.onrender.com'
-        : 'ws://localhost:8080')
-) + '/api/v1';
+import { WS_BASE } from '../config/endpoints.js';
 
 /**
  * Match WebSocket — queue + in-match moves.

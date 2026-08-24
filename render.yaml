@@ -1,7 +1,7 @@
-# Genius Clan — API-only server (mobile / APK clients)
-# Frontend is NOT served from this service. Static web (optional) is separate.
+# Genius Clan — final attach: API + Frontend (separate services)
 
 services:
+  # ---------- API (Rust) — mobile + web clients ----------
   - type: web
     name: genius-clan-api
     runtime: docker
@@ -18,15 +18,13 @@ services:
       - key: DATABASE_URL
         value: sqlite:///data/genius_clan.db
       - key: FRONTEND_BASE_URL
-        # Optional web SPA; APK uses Capacitor origin
         value: https://genius-clan.onrender.com
       - key: JWT_ACCESS_TTL_MIN
         value: "15"
       - key: JWT_REFRESH_TTL_DAYS
         value: "30"
       - key: CORS_EXTRA_ORIGINS
-        # Capacitor / local Android WebView origins (comma-separated)
-        value: "https://localhost,capacitor://localhost,http://localhost,http://localhost:5173"
+        value: "https://genius-clan.onrender.com,https://localhost,capacitor://localhost,http://localhost,http://localhost:5173,http://127.0.0.1:5173"
       - key: SMTP_HOST
         value: ""
       - key: SMTP_USER
@@ -34,8 +32,20 @@ services:
       - key: SMTP_PASS
         value: ""
 
-  # Optional public web SPA — disable/delete this service if APK-only.
-  # - type: web
-  #   name: genius-clan
-  #   runtime: static
-  #   ...
+  # ---------- Frontend (static SPA) → talks to API ----------
+  - type: web
+    name: genius-clan
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE
+        value: https://genius-clan-api.onrender.com
+      - key: VITE_WS_BASE
+        value: wss://genius-clan-api.onrender.com
