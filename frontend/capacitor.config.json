@@ -3,21 +3,34 @@
   "appName": "Genius Clan",
   "webDir": "dist",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "allowNavigation": [
+      "genius-clan.onrender.com",
+      "genius-clan-api.onrender.com"
+    ]
   },
   "android": {
     "allowMixedContent": false,
-    "backgroundColor": "#0F1115"
+    "backgroundColor": "#0F1115",
+    "webContentsDebuggingEnabled": false
   },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 1200,
+      "launchShowDuration": 1600,
+      "launchAutoHide": true,
       "backgroundColor": "#0F1115",
-      "showSpinner": false
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
     },
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#0F1115"
+    },
+    "App": {
+      "disableBackButtonHandler": false
     }
   }
 }

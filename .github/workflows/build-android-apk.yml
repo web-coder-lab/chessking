@@ -38,6 +38,22 @@ jobs:
           fi
           npx cap sync android
 
+      - name: Copy brand icons into Android res
+        run: |
+          ICON=resources/icon.png
+          if [ -f "$ICON" ]; then
+            for d in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
+              mkdir -p android/app/src/main/res/$d
+              cp "$ICON" android/app/src/main/res/$d/ic_launcher.png
+              cp "$ICON" android/app/src/main/res/$d/ic_launcher_round.png
+              cp "$ICON" android/app/src/main/res/$d/ic_launcher_foreground.png
+            done
+          fi
+          if [ -f resources/splash.png ]; then
+            mkdir -p android/app/src/main/res/drawable
+            cp resources/splash.png android/app/src/main/res/drawable/splash.png
+          fi
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

@@ -179,3 +179,30 @@ body.ck-native {
   max-width: none;
   min-width: 0;
 }
+
+/* Phase 2 — native design scale (phone APK) */
+.ck-native {
+  --topbar-height: 56px;
+  --min-tap-target: 48px;
+  --text-page-title-size: 24px;
+  --text-section-heading-size: 18px;
+  --text-body-size: 15px;
+  --text-button-size: 16px;
+  --screen-padding-x: 18px;
+  --radius-card: 18px;
+  --radius-button: 14px;
+}
+.ck-native .ck-topbar {
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.ck-native .ck-bottom-nav {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+.ck-native .ck-play__option-card,
+.ck-native .ck-card {
+  min-height: 64px;
+}
+.ck-native .icon-tap-target {
+  min-width: 48px;
+  min-height: 48px;
+}
