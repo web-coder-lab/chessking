@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android",
-    "android:add": "npx cap add android"
+    "android:add": "npx cap add android",
+    "android:prep": "bash scripts/android-release-prep.sh"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

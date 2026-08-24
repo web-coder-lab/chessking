@@ -2,6 +2,15 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'debug or release'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
   push:
     branches: [main]
     paths:
@@ -20,8 +29,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install JS deps
         run: npm install
@@ -54,6 +61,26 @@ jobs:
             cp resources/splash.png android/app/src/main/res/drawable/splash.png
           fi
 
+      - name: Decode release keystore (optional)
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/genius-clan.jks
+            echo "KEYSTORE_PATH=/tmp/genius-clan.jks" >> $GITHUB_ENV
+          else
+            echo "No ANDROID_KEYSTORE_BASE64 secret — will try assembleRelease unsigned/debug sign"
+          fi
+
+      - name: Prepare version + signing
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: bash scripts/android-release-prep.sh
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -63,13 +90,31 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Build debug APK
+        if: ${{ github.event.inputs.build_type != 'release' }}
         working-directory: frontend/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Build release APK
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload debug APK
+        if: ${{ github.event.inputs.build_type != 'release' }}
         uses: actions/upload-artifact@v4
         with:
           name: genius-clan-debug-apk
           path: frontend/android/app/build/outputs/apk/debug/*.apk
+
+      - name: Upload release APK
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: genius-clan-release-apk
+          path: |
+            frontend/android/app/build/outputs/apk/release/*.apk
+            frontend/android/app/build/outputs/apk/release/*.aab
