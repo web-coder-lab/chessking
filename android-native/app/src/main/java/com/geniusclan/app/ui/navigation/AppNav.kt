@@ -38,6 +38,8 @@ import com.geniusclan.app.ui.screens.hub.DashboardScreen
 import com.geniusclan.app.ui.screens.hub.LeaderboardScreen
 import com.geniusclan.app.ui.screens.hub.NotificationsScreen
 import com.geniusclan.app.ui.screens.hub.InviteScreen
+import com.geniusclan.app.ui.screens.custom.CustomMatchScreen
+import com.geniusclan.app.ui.screens.custom.MatchHistoryScreen
 
 @Composable
 fun AppNav() {
@@ -95,7 +97,9 @@ fun AppNav() {
                 onDashboard = { nav.navigate(Routes.DASHBOARD) },
                 onLeaderboard = { nav.navigate(Routes.LEADERBOARD) },
                 onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
-                onInvite = { nav.navigate(Routes.INVITE) }
+                onInvite = { nav.navigate(Routes.INVITE) },
+                onCustomMatch = { nav.navigate(Routes.CUSTOM_MATCH) },
+                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) }
             )
         }
         composable(Routes.PLAY) {
@@ -218,7 +222,9 @@ fun AppNav() {
                 onPlay = { nav.navigate(Routes.PLAY) },
                 onLeaderboard = { nav.navigate(Routes.LEADERBOARD) },
                 onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
-                onInvite = { nav.navigate(Routes.INVITE) }
+                onInvite = { nav.navigate(Routes.INVITE) },
+                onCustomMatch = { nav.navigate(Routes.CUSTOM_MATCH) },
+                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) }
             )
         }
         composable(Routes.LEADERBOARD) {
@@ -229,6 +235,17 @@ fun AppNav() {
         }
         composable(Routes.INVITE) {
             InviteScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.CUSTOM_MATCH) {
+            CustomMatchScreen(
+                onBack = { nav.popBackStack() },
+                onMatchReady = { matchId, color ->
+                    nav.navigate(Routes.board(matchId, color))
+                }
+            )
+        }
+        composable(Routes.MATCH_HISTORY) {
+            MatchHistoryScreen(onBack = { nav.popBackStack() })
         }
     }
 }

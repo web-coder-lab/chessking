@@ -27,6 +27,8 @@ object Routes {
     const val LEADERBOARD = "leaderboard"
     const val NOTIFICATIONS = "notifications"
     const val INVITE = "invite"
+    const val CUSTOM_MATCH = "custom-match"
+    const val MATCH_HISTORY = "match-history"
 
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }

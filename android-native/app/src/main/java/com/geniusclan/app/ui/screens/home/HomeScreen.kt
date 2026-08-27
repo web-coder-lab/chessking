@@ -49,7 +49,9 @@ fun HomeScreen(
     onDashboard: () -> Unit = {},
     onLeaderboard: () -> Unit = {},
     onNotifications: () -> Unit = {},
-    onInvite: () -> Unit = {}
+    onInvite: () -> Unit = {},
+    onCustomMatch: () -> Unit = {},
+    onMatchHistory: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -65,6 +67,10 @@ fun HomeScreen(
         FeatureCard("📊 Dashboard", "Daily claim, rating, coins", onDashboard)
         Spacer(Modifier.height(12.dp))
         FeatureCard("⚡ Quick Match", "Ranked & casual matchmaking", onPlay)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🎯 Custom match", "Invite a player by username", onCustomMatch)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("📜 Match history", "Your recent games", onMatchHistory)
         Spacer(Modifier.height(12.dp))
         FeatureCard("🏆 Leaderboard", "Global rankings", onLeaderboard)
         Spacer(Modifier.height(12.dp))

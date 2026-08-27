@@ -116,6 +116,14 @@ class GameSocket(
         send(JSONObject().put("type", "offer_draw").put("match_id", matchId))
     }
 
+    fun acceptDraw(matchId: String) {
+        send(JSONObject().put("type", "accept_draw").put("match_id", matchId))
+    }
+
+    fun declineDraw(matchId: String) {
+        send(JSONObject().put("type", "decline_draw").put("match_id", matchId))
+    }
+
     fun close() {
         socket.getAndSet(null)?.close(1000, "bye")
     }

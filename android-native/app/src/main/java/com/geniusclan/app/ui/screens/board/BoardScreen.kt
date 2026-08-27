@@ -74,9 +74,13 @@ fun BoardScreen(
                         status = "Match ready"
                     }
                     "match_ended" -> {
-                        ended = msg.optString("result", "ended")
+                        ended = msg.optString("result", msg.optString("result_reason", "ended"))
                         status = "Game over"
                     }
+                    "draw_offered" -> {
+                        status = "Draw offered — accept or decline"
+                    }
+                    "draw_declined" -> status = "Draw declined"
                     "error" -> error = msg.optString("message", msg.optString("code"))
                     "opponent_disconnected" -> status = "Opponent disconnected"
                     "opponent_reconnected" -> status = "Opponent back"
@@ -178,6 +182,24 @@ fun BoardScreen(
         }
 
         Spacer(Modifier.height(12.dp))
+        if (status.contains("Draw offered", ignoreCase = true)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { socket?.acceptDraw(matchId) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
+                ) { Text("Accept draw") }
+                Button(
+                    onClick = { socket?.declineDraw(matchId) },
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = GcSurface, contentColor = GcText)
+                ) { Text("Decline") }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -186,12 +208,21 @@ fun BoardScreen(
                 onClick = { socket?.offerDraw(matchId) },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = GcGoldSoft, contentColor = GcGold)
-            ) { Text("Draw") }
+            ) { Text("Offer draw") }
             Button(
                 onClick = { socket?.resign(matchId) },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = GcDanger, contentColor = GcText)
             ) { Text("Resign") }
+        }
+        if (ended != null) {
+            Spacer(Modifier.height(12.dp))
+            Text("Match finished", color = GcGold, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Button(
+                onClick = onLeave,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
+            ) { Text("Back to home") }
         }
     }
 }

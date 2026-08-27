@@ -783,6 +783,130 @@ object ApiClient {
         }
     }
 
+
+    data class UserHitDto(val id: String, val username: String)
+    data class InviteRowDto(val id: String, val label: String, val status: String)
+    data class MatchHistoryDto(val id: String, val result: String, val opponent: String)
+
+    fun searchCustomMatch(username: String): Result<List<UserHitDto>> {
+        return try {
+            val q = java.net.URLEncoder.encode(username, "UTF-8")
+            val req = authed(Request.Builder().url(api("/custom-match/search?username=$q")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                val arr = o.optJSONArray("results") ?: org.json.JSONArray()
+                val list = mutableListOf<UserHitDto>()
+                for (i in 0 until arr.length()) {
+                    val r = arr.optJSONObject(i) ?: continue
+                    list.add(UserHitDto(r.optString("id"), r.optString("username")))
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun sendCustomInvite(receiverUsername: String): Result<String> {
+        return try {
+            val body = JSONObject().put("receiver_username", receiverUsername).toString().toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/custom-match/invite")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                Result.success(o.optString("id", o.optString("invite_id", "ok")))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun respondInvite(inviteId: String, decision: String): Result<String?> {
+        return try {
+            val body = JSONObject().put("decision", decision).toString().toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/custom-match/invite/$inviteId/respond")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                val matchId = o.optString("match_id").ifBlank { null }
+                Result.success(matchId)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun inviteHistory(): Result<List<InviteRowDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/custom-match/history")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("invites") ?: root.optJSONArray("data")
+                    else -> null
+                } ?: org.json.JSONArray()
+                val list = mutableListOf<InviteRowDto>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        InviteRowDto(
+                            id = o.optString("id"),
+                            label = o.optString("opponent_username", o.optString("receiver_username", o.optString("sender_username", "Invite"))),
+                            status = o.optString("status", "")
+                        )
+                    )
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun matchHistory(username: String): Result<List<MatchHistoryDto>> {
+        return try {
+            val q = java.net.URLEncoder.encode(username, "UTF-8")
+            val req = authed(Request.Builder().url(api("/profile/$q/match-history?limit=30")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("matches") ?: root.optJSONArray("history") ?: root.optJSONArray("data")
+                    else -> null
+                } ?: org.json.JSONArray()
+                val list = mutableListOf<MatchHistoryDto>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        MatchHistoryDto(
+                            id = o.optString("id", o.optString("match_id")),
+                            result = o.optString("result", o.optString("status", "")),
+                            opponent = o.optString("opponent", o.optString("opponent_username", "—"))
+                        )
+                    )
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null
