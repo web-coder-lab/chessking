@@ -29,6 +29,11 @@ object Routes {
     const val INVITE = "invite"
     const val CUSTOM_MATCH = "custom-match"
     const val MATCH_HISTORY = "match-history"
+    const val LOGIN_2FA = "auth/2fa/{pendingId}"
+    const val FORGOT_PASSWORD = "auth/forgot"
+    const val RESET_PASSWORD = "auth/reset"
+
+    fun login2fa(pendingId: String) = "auth/2fa/$pendingId"
 
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }

@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun AuthScreen(onLoggedIn: () -> Unit) {
+fun AuthScreen(onLoggedIn: () -> Unit, onNeeds2FA: (String) -> Unit = {}, onForgotPassword: () -> Unit = {}) {
     var modeRegister by remember { mutableStateOf(false) }
     var identifier by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -107,18 +107,35 @@ fun AuthScreen(onLoggedIn: () -> Unit) {
                                 return@withContext Result.failure(Exception("Fill email, username, password (6+ chars)"))
                             }
                             ApiClient.register(username.trim(), email.trim(), password).mapCatching {
-                                ApiClient.login(username.trim(), password).getOrThrow()
+                                when (val lr = ApiClient.login(username.trim(), password).getOrThrow()) {
+                                    is ApiClient.LoginResult.Success -> "ok"
+                                    is ApiClient.LoginResult.Needs2FA -> "2FA:${lr.pendingId}"
+                                }
                             }
                         } else {
                             if (identifier.isBlank() || password.isBlank()) {
                                 return@withContext Result.failure(Exception("Enter username and password"))
                             }
-                            ApiClient.login(identifier.trim(), password)
+                            ApiClient.login(identifier.trim(), password).map { lr ->
+                                when (lr) {
+                                    is ApiClient.LoginResult.Success -> "ok"
+                                    is ApiClient.LoginResult.Needs2FA -> "2FA:${lr.pendingId}"
+                                }
+                            }
                         }
                     }
                     loading = false
-                    result.onSuccess { onLoggedIn() }
-                        .onFailure { error = it.message ?: "Failed" }
+                    result.onSuccess { value ->
+                        when {
+                            value is String && value.startsWith("2FA:") ->
+                                onNeeds2FA(value.removePrefix("2FA:"))
+                            else -> onLoggedIn()
+                        }
+                    }.onFailure { e ->
+                        val m = e.message.orEmpty()
+                        if (m.startsWith("2FA:")) onNeeds2FA(m.removePrefix("2FA:"))
+                        else error = e.message ?: "Failed"
+                    }
                 }
             },
             enabled = !loading,
@@ -146,6 +163,11 @@ fun AuthScreen(onLoggedIn: () -> Unit) {
                 text = if (modeRegister) "Already have an account? Sign in" else "Create account",
                 color = GcTextMuted
             )
+        }
+        if (!modeRegister) {
+            TextButton(onClick = onForgotPassword) {
+                Text("Forgot password?", color = GcGold, fontSize = 13.sp)
+            }
         }
 
         if (modeRegister) {

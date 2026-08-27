@@ -15,6 +15,9 @@ import androidx.navigation.navArgument
 import com.geniusclan.app.data.api.ApiClient
 import com.geniusclan.app.data.api.TokenStore
 import com.geniusclan.app.ui.screens.auth.AuthScreen
+import com.geniusclan.app.ui.screens.auth.Login2FAScreen
+import com.geniusclan.app.ui.screens.auth.ForgotPasswordScreen
+import com.geniusclan.app.ui.screens.auth.ResetPasswordScreen
 import com.geniusclan.app.ui.screens.board.BoardScreen
 import com.geniusclan.app.ui.screens.home.HomeScreen
 import com.geniusclan.app.ui.screens.play.PlayScreen
@@ -81,6 +84,43 @@ fun AppNav() {
                     TokenStore.save(context, ApiClient.accessToken, ApiClient.refreshToken)
                     hasSession = true
                     nav.navigate(Routes.HOME) {
+                        popUpTo(Routes.AUTH) { inclusive = true }
+                    }
+                },
+                onNeeds2FA = { pendingId ->
+                    nav.navigate(Routes.login2fa(pendingId))
+                },
+                onForgotPassword = { nav.navigate(Routes.FORGOT_PASSWORD) }
+            )
+        }
+        composable(
+            route = Routes.LOGIN_2FA,
+            arguments = listOf(navArgument("pendingId") { type = NavType.StringType })
+        ) { entry ->
+            val pendingId = entry.arguments?.getString("pendingId").orEmpty()
+            Login2FAScreen(
+                pendingId = pendingId,
+                onSuccess = {
+                    TokenStore.save(context, ApiClient.accessToken, ApiClient.refreshToken)
+                    hasSession = true
+                    nav.navigate(Routes.HOME) {
+                        popUpTo(Routes.AUTH) { inclusive = true }
+                    }
+                },
+                onBack = { nav.popBackStack() }
+            )
+        }
+        composable(Routes.FORGOT_PASSWORD) {
+            ForgotPasswordScreen(
+                onBack = { nav.popBackStack() },
+                onHaveToken = { nav.navigate(Routes.RESET_PASSWORD) }
+            )
+        }
+        composable(Routes.RESET_PASSWORD) {
+            ResetPasswordScreen(
+                onBack = { nav.popBackStack() },
+                onDone = {
+                    nav.navigate(Routes.AUTH) {
                         popUpTo(Routes.AUTH) { inclusive = true }
                     }
                 }

@@ -49,7 +49,13 @@ object ApiClient {
         return builder
     }
 
-    fun login(identifier: String, password: String): Result<Unit> {
+
+    sealed class LoginResult {
+        data object Success : LoginResult()
+        data class Needs2FA(val pendingId: String) : LoginResult()
+    }
+
+    fun login(identifier: String, password: String): Result<LoginResult> {
         return try {
             val body = JSONObject()
                 .put("identifier", identifier)
@@ -66,8 +72,36 @@ object ApiClient {
                 if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
                 val obj = JSONObject(text)
                 if (obj.optBoolean("requires_2fa")) {
-                    return Result.failure(Exception("2FA required — enter code on web for now"))
+                    val pending = obj.optString("pending_id")
+                    if (pending.isBlank()) return Result.failure(Exception("2FA pending id missing"))
+                    return Result.success(LoginResult.Needs2FA(pending))
                 }
+                accessToken = obj.optString("access_token").ifBlank { null }
+                refreshToken = obj.optString("refresh_token").ifBlank { null }
+                if (accessToken == null) return Result.failure(Exception("No access token"))
+                Result.success(LoginResult.Success)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun login2FA(pendingId: String, code: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("pending_id", pendingId)
+                .put("code", code)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = Request.Builder()
+                .url(api("/auth/login/2fa"))
+                .post(body)
+                .header("Content-Type", "application/json")
+                .build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val obj = JSONObject(text)
                 accessToken = obj.optString("access_token").ifBlank { null }
                 refreshToken = obj.optString("refresh_token").ifBlank { null }
                 if (accessToken == null) return Result.failure(Exception("No access token"))
@@ -77,6 +111,73 @@ object ApiClient {
             Result.failure(e)
         }
     }
+
+    fun forgotPassword(email: String): Result<String> {
+        return try {
+            val body = JSONObject().put("email", email).toString().toRequestBody(jsonMedia)
+            val req = Request.Builder()
+                .url(api("/auth/forgot-password"))
+                .post(body)
+                .header("Content-Type", "application/json")
+                .build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success("If that email is registered, a reset link was sent.")
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun resetPassword(token: String, newPassword: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("token", token)
+                .put("new_password", newPassword)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = Request.Builder()
+                .url(api("/auth/reset-password"))
+                .post(body)
+                .header("Content-Type", "application/json")
+                .build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun completeSignup(token: String, username: String, password: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("token", token)
+                .put("username", username)
+                .put("password", password)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = Request.Builder()
+                .url(api("/auth/complete-signup"))
+                .post(body)
+                .header("Content-Type", "application/json")
+                .build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val obj = JSONObject(text)
+                accessToken = obj.optString("access_token").ifBlank { null }
+                refreshToken = obj.optString("refresh_token").ifBlank { null }
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 
     /** Email-first signup intent (sends mail when SMTP configured). */
     fun registerIntent(email: String): Result<String> {
