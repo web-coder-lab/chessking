@@ -198,6 +198,203 @@ object ApiClient {
         }
     }
 
+
+    fun enable2FA(currentPassword: String, code: String, confirmCode: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("current_password", currentPassword)
+                .put("new_code", code)
+                .put("confirm_code", confirmCode)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/auth/2fa/enable")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun disable2FA(currentPassword: String, code: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("current_password", currentPassword)
+                .put("current_code", code)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/auth/2fa/disable")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    data class SessionDto(val id: String, val label: String, val current: Boolean)
+
+    fun getSessions(): Result<List<SessionDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/auth/sessions")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val list = mutableListOf<SessionDto>()
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("sessions") ?: root.optJSONArray("data")
+                    else -> null
+                }
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        list.add(
+                            SessionDto(
+                                id = o.optString("id", o.optString("session_id")),
+                                label = o.optString("device", o.optString("user_agent", "Session")).ifBlank { "Session" },
+                                current = o.optBoolean("current", o.optBoolean("is_current"))
+                            )
+                        )
+                    }
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun revokeSession(sessionId: String): Result<Unit> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/auth/sessions/$sessionId")).delete()
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun changePassword(currentPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("current_password", currentPassword)
+                .put("new_password", newPassword)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/profile/me/password")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun changeEmail(currentPassword: String, newEmail: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("current_password", currentPassword)
+                .put("new_email", newEmail)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/profile/me/email")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun fetchLegal(path: String): Result<String> {
+        return try {
+            val req = Request.Builder().url(api(path)).get().build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val content = runCatching {
+                    val o = JSONObject(text)
+                    o.optString("content").ifBlank {
+                        o.optString("body").ifBlank { o.optString("text", text) }
+                    }
+                }.getOrDefault(text)
+                Result.success(content)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun supportInfo(): Result<String> {
+        return try {
+            val req = Request.Builder().url(api("/support/info")).get().build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val msg = runCatching {
+                    val o = JSONObject(text)
+                    o.optString("email").ifBlank {
+                        o.optString("support_email").ifBlank {
+                            o.optString("message", text)
+                        }
+                    }
+                }.getOrDefault(text)
+                Result.success(msg)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun submitBugReport(title: String, description: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("title", title)
+                .put("description", description)
+                .put("screenshot_url", JSONObject.NULL)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/reports/bug")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null

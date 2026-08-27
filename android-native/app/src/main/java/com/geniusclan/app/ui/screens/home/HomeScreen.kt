@@ -42,7 +42,8 @@ fun HomeScreen(
     subtitle: String = "Native Jetpack Compose · no WebView",
     onPlay: () -> Unit,
     onWallet: () -> Unit,
-    onProfile: () -> Unit
+    onProfile: () -> Unit,
+    onSettings: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -59,7 +60,9 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
         FeatureCard("🪙 Wallet", "Coins & checkout — Phase 3", onWallet)
         Spacer(modifier = Modifier.height(12.dp))
-        FeatureCard("👤 Profile", "Edit bio & settings — Phase 3", onProfile)
+        FeatureCard("👤 Profile", "Edit bio & stats", onProfile)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("⚙ Settings", "2FA, sessions, support, legal", onSettings)
 
         Spacer(Modifier = Modifier.weight(1f))
         BottomBar(onPlay = onPlay, onWallet = onWallet, onProfile = onProfile)

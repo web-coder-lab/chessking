@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ProfileScreen(onBack: () -> Unit, onLogout: () -> Unit) {
+fun ProfileScreen(onBack: () -> Unit, onSettings: () -> Unit = {}, onLogout: () -> Unit) {
     var profile by remember { mutableStateOf<ProfileDto?>(null) }
     var bio by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
@@ -70,7 +70,8 @@ fun ProfileScreen(onBack: () -> Unit, onLogout: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = onBack) { Text("← Back", color = GcGold) }
-            Text("Profile", color = GcText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+            Text("Profile", color = GcText, fontWeight = FontWeight.Bold, fontSize = 22.sp, modifier = Modifier.weight(1f))
+            TextButton(onClick = onSettings) { Text("⚙ Settings", color = GcGold) }
         }
 
         if (loading) {

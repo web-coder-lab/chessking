@@ -22,6 +22,14 @@ import com.geniusclan.app.ui.screens.profile.ProfileScreen
 import com.geniusclan.app.ui.screens.splash.ServerGateScreen
 import com.geniusclan.app.ui.screens.splash.SplashScreen
 import com.geniusclan.app.ui.screens.wallet.WalletScreen
+import com.geniusclan.app.ui.screens.settings.SettingsHomeScreen
+import com.geniusclan.app.ui.screens.settings.TwoFactorScreen
+import com.geniusclan.app.ui.screens.settings.SessionsScreen
+import com.geniusclan.app.ui.screens.settings.ChangePasswordScreen
+import com.geniusclan.app.ui.screens.settings.ChangeEmailScreen
+import com.geniusclan.app.ui.screens.settings.LegalScreen
+import com.geniusclan.app.ui.screens.settings.LegalKind
+import com.geniusclan.app.ui.screens.settings.BugReportScreen
 
 @Composable
 fun AppNav() {
@@ -72,7 +80,8 @@ fun AppNav() {
             HomeScreen(
                 onPlay = { nav.navigate(Routes.PLAY) },
                 onWallet = { nav.navigate(Routes.WALLET) },
-                onProfile = { nav.navigate(Routes.PROFILE) }
+                onProfile = { nav.navigate(Routes.PROFILE) },
+                onSettings = { nav.navigate(Routes.SETTINGS) }
             )
         }
         composable(Routes.PLAY) {
@@ -110,6 +119,7 @@ fun AppNav() {
         composable(Routes.PROFILE) {
             ProfileScreen(
                 onBack = { nav.popBackStack() },
+                onSettings = { nav.navigate(Routes.SETTINGS) },
                 onLogout = {
                     TokenStore.clear(context)
                     hasSession = false
@@ -118,6 +128,53 @@ fun AppNav() {
                     }
                 }
             )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsHomeScreen(
+                onBack = { nav.popBackStack() },
+                onOpen = { key ->
+                    val route = when (key) {
+                        "2fa" -> Routes.SETTINGS_2FA
+                        "sessions" -> Routes.SETTINGS_SESSIONS
+                        "password" -> Routes.SETTINGS_PASSWORD
+                        "email" -> Routes.SETTINGS_EMAIL
+                        "bug" -> Routes.SETTINGS_BUG
+                        "support" -> Routes.SETTINGS_SUPPORT
+                        "privacy" -> Routes.SETTINGS_PRIVACY
+                        "terms" -> Routes.SETTINGS_TERMS
+                        "about" -> Routes.SETTINGS_ABOUT
+                        else -> Routes.SETTINGS
+                    }
+                    nav.navigate(route)
+                }
+            )
+        }
+        composable(Routes.SETTINGS_2FA) {
+            TwoFactorScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_SESSIONS) {
+            SessionsScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_PASSWORD) {
+            ChangePasswordScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_EMAIL) {
+            ChangeEmailScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_BUG) {
+            BugReportScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_SUPPORT) {
+            LegalScreen(LegalKind.SUPPORT, onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_PRIVACY) {
+            LegalScreen(LegalKind.PRIVACY, onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_TERMS) {
+            LegalScreen(LegalKind.TERMS, onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SETTINGS_ABOUT) {
+            LegalScreen(LegalKind.ABOUT, onBack = { nav.popBackStack() })
         }
     }
 }
