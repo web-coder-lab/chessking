@@ -530,6 +530,124 @@ object ApiClient {
         }
     }
 
+
+    data class PackageDto(val id: String, val amountPkr: Long, val coins: Long, val bonusLabel: String)
+
+    data class DepositStartDto(val transactionId: String, val redirectUrl: String)
+
+    data class HistoryRowDto(val id: String, val label: String, val amount: String, val createdAt: String)
+
+    fun listPackages(): Result<List<PackageDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/wallet/packages")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val list = mutableListOf<PackageDto>()
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("packages") ?: root.optJSONArray("data")
+                    else -> null
+                }
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        list.add(
+                            PackageDto(
+                                id = o.optString("id"),
+                                amountPkr = o.optLong("amount_pkr"),
+                                coins = o.optLong("coins"),
+                                bonusLabel = o.optString("bonus_label", "")
+                            )
+                        )
+                    }
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun initiateDeposit(amountPkr: Long, gateway: String, payerPhone: String?): Result<DepositStartDto> {
+        return try {
+            val body = JSONObject()
+                .put("amount_pkr", amountPkr)
+                .put("gateway", gateway)
+                .put("idempotency_key", java.util.UUID.randomUUID().toString())
+            if (!payerPhone.isNullOrBlank()) body.put("payer_phone", payerPhone)
+            else body.put("payer_phone", JSONObject.NULL)
+            val req = authed(
+                Request.Builder().url(api("/wallet/deposit/initiate")).post(body.toString().toRequestBody(jsonMedia))
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                Result.success(
+                    DepositStartDto(
+                        transactionId = o.optString("payment_transaction_id"),
+                        redirectUrl = o.optString("redirect_url")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun depositStatus(transactionId: String): Result<Pair<String, Long?>> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/wallet/deposit/$transactionId/status")).get()
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                val coins = if (o.isNull("coins_credited")) null else o.optLong("coins_credited")
+                Result.success(o.optString("status") to coins)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun walletHistory(): Result<List<HistoryRowDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/wallet/history")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val list = mutableListOf<HistoryRowDto>()
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("items") ?: root.optJSONArray("transactions") ?: root.optJSONArray("history") ?: root.optJSONArray("data")
+                    else -> null
+                }
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        list.add(
+                            HistoryRowDto(
+                                id = o.optString("id"),
+                                label = o.optString("label", o.optString("log_type", "Transaction")),
+                                amount = o.optString("amount", o.optString("coins", o.optString("delta", ""))),
+                                createdAt = o.optString("created_at", "")
+                            )
+                        )
+                    }
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null

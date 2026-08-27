@@ -21,6 +21,8 @@ object Routes {
     const val SETTINGS_ABOUT = "settings/about"
     const val SHOP = "shop"
     const val INVENTORY = "inventory"
+    const val CHECKOUT = "wallet/checkout"
+    const val WALLET_HISTORY = "wallet/history"
 
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }

@@ -22,6 +22,8 @@ import com.geniusclan.app.ui.screens.profile.ProfileScreen
 import com.geniusclan.app.ui.screens.splash.ServerGateScreen
 import com.geniusclan.app.ui.screens.splash.SplashScreen
 import com.geniusclan.app.ui.screens.wallet.WalletScreen
+import com.geniusclan.app.ui.screens.wallet.CheckoutScreen
+import com.geniusclan.app.ui.screens.wallet.HistoryScreen
 import com.geniusclan.app.ui.screens.settings.SettingsHomeScreen
 import com.geniusclan.app.ui.screens.settings.TwoFactorScreen
 import com.geniusclan.app.ui.screens.settings.SessionsScreen
@@ -118,7 +120,17 @@ fun AppNav() {
             )
         }
         composable(Routes.WALLET) {
-            WalletScreen(onBack = { nav.popBackStack() })
+            WalletScreen(
+                onBack = { nav.popBackStack() },
+                onAddCoins = { nav.navigate(Routes.CHECKOUT) },
+                onHistory = { nav.navigate(Routes.WALLET_HISTORY) }
+            )
+        }
+        composable(Routes.CHECKOUT) {
+            CheckoutScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.WALLET_HISTORY) {
+            HistoryScreen(onBack = { nav.popBackStack() })
         }
         composable(Routes.PROFILE) {
             ProfileScreen(
