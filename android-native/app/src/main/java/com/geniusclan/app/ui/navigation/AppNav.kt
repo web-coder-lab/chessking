@@ -1,11 +1,19 @@
 package com.geniusclan.app.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.geniusclan.app.data.api.ApiClient
+import com.geniusclan.app.data.api.TokenStore
 import com.geniusclan.app.ui.screens.auth.AuthScreen
 import com.geniusclan.app.ui.screens.board.BoardScreen
 import com.geniusclan.app.ui.screens.home.HomeScreen
@@ -18,6 +26,17 @@ import com.geniusclan.app.ui.screens.wallet.WalletScreen
 @Composable
 fun AppNav() {
     val nav = rememberNavController()
+    val context = LocalContext.current
+    var sessionReady by remember { mutableStateOf(false) }
+    var hasSession by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        hasSession = TokenStore.hasSession(context)
+        sessionReady = true
+    }
+
+    if (!sessionReady) return
+
     NavHost(navController = nav, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) {
             SplashScreen(
@@ -31,7 +50,8 @@ fun AppNav() {
         composable(Routes.SERVER_GATE) {
             ServerGateScreen(
                 onReady = {
-                    nav.navigate(Routes.AUTH) {
+                    val dest = if (hasSession) Routes.HOME else Routes.AUTH
+                    nav.navigate(dest) {
                         popUpTo(Routes.SERVER_GATE) { inclusive = true }
                     }
                 }
@@ -40,6 +60,8 @@ fun AppNav() {
         composable(Routes.AUTH) {
             AuthScreen(
                 onLoggedIn = {
+                    TokenStore.save(context, ApiClient.accessToken, ApiClient.refreshToken)
+                    hasSession = true
                     nav.navigate(Routes.HOME) {
                         popUpTo(Routes.AUTH) { inclusive = true }
                     }
@@ -89,6 +111,8 @@ fun AppNav() {
             ProfileScreen(
                 onBack = { nav.popBackStack() },
                 onLogout = {
+                    TokenStore.clear(context)
+                    hasSession = false
                     nav.navigate(Routes.AUTH) {
                         popUpTo(0) { inclusive = true }
                     }

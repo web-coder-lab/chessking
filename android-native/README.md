@@ -1,9 +1,22 @@
-# android-native (Jetpack Compose)
+# Genius Clan — Native Android (Jetpack Compose)
 
-Phase 2 will create the real Gradle/Kotlin project here:
+**Kotlin · Jetpack Compose · OkHttp — no WebView.**
 
-- `app/` — Compose UI
-- Network module → `https://genius-clan-api.onrender.com`
-- **No WebView** loading the old website
+## Open
+Android Studio → **Open** this `android-native/` folder → Sync → Run.
 
-Phase 1 only prepared the **API server**. Do not use `frontend/` Capacitor for the product APK.
+## API
+`https://genius-clan-api.onrender.com` (see `NATIVE_API.md`)
+
+## Features (Phases 1–5)
+- Splash + server wake gate
+- Login / register
+- Profile (bio) + wallet balance
+- Casual / ranked matchmaking (WebSocket)
+- Chess board (FEN + server-validated moves)
+- Persistent login session
+- GitHub Actions native APK build
+
+## Product path
+Use **this** project for APK.  
+Do **not** use Capacitor `frontend/` wrap for the store app.
