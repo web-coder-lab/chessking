@@ -1,5 +1,6 @@
 //! GitHub Contents API as durable JSON store (private repo).
-//! Render holds zero data files — every row is a file under data/ in the private repo.
+//! Render holds zero data files — every row is a file under chess/ (GITHUB_DATA_ROOT).
+//! Database ID: dstabase7837638362826373
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use reqwest::Client;
@@ -14,6 +15,8 @@ pub struct GitHubStore {
     repo: String,
     token: String,
     branch: String,
+    /// Path prefix in repo (default: "chess")
+    root: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -50,13 +53,26 @@ struct ContentsListItem {
 
 impl GitHubStore {
     pub fn new(owner: String, repo: String, token: String, branch: String) -> Self {
+        Self::with_root(owner, repo, token, branch, "chess".into())
+    }
+
+    pub fn with_root(owner: String, repo: String, token: String, branch: String, root: String) -> Self {
         Self {
             client: Client::new(),
             owner,
             repo,
             token,
             branch,
+            root: root.trim_matches('/').to_string(),
         }
+    }
+
+    fn doc_path(&self, collection: &str, id: &str) -> String {
+        format!("{}/{}/{}.json", self.root, collection, id)
+    }
+
+    fn collection_path(&self, collection: &str) -> String {
+        format!("{}/{}", self.root, collection)
     }
 
     fn api_base(&self) -> String {
@@ -83,13 +99,13 @@ impl GitHubStore {
         h
     }
 
-    /// Read JSON document at `data/{collection}/{id}.json`. Returns (value, sha).
+    /// Read JSON document at `{root}/{collection}/{id}.json`. Returns (value, sha).
     pub async fn get_json<T: DeserializeOwned>(
         &self,
         collection: &str,
         id: &str,
     ) -> Result<(T, String), StoreError> {
-        let path = format!("data/{collection}/{id}.json");
+        let path = self.doc_path(collection, id);
         let url = format!("{}/{}?ref={}", self.api_base(), path, self.branch);
         let res = self.client.get(&url).headers(self.headers()).send().await?;
         if res.status() == reqwest::StatusCode::NOT_FOUND {
@@ -114,7 +130,7 @@ impl GitHubStore {
         sha: Option<&str>,
         message: &str,
     ) -> Result<String, StoreError> {
-        let path = format!("data/{collection}/{id}.json");
+        let path = self.doc_path(collection, id);
         let url = format!("{}/{}", self.api_base(), path);
         let content = B64.encode(serde_json::to_vec_pretty(value)?);
         let mut payload = serde_json::json!({
@@ -152,7 +168,7 @@ impl GitHubStore {
         sha: &str,
         message: &str,
     ) -> Result<(), StoreError> {
-        let path = format!("data/{collection}/{id}.json");
+        let path = self.doc_path(collection, id);
         let url = format!("{}/{}", self.api_base(), path);
         let payload = serde_json::json!({
             "message": message,
@@ -177,7 +193,7 @@ impl GitHubStore {
 
     /// List file names (ids without .json) in a collection directory.
     pub async fn list_ids(&self, collection: &str) -> Result<Vec<String>, StoreError> {
-        let path = format!("data/{collection}");
+        let path = self.collection_path(collection);
         let url = format!("{}/{}?ref={}", self.api_base(), path, self.branch);
         let res = self.client.get(&url).headers(self.headers()).send().await?;
         if res.status() == reqwest::StatusCode::NOT_FOUND {
@@ -194,7 +210,7 @@ impl GitHubStore {
             .collect())
     }
 
-    /// Index helpers: whole JSON map/list at data/indexes/{name}.json
+    /// Index helpers: whole JSON map/list at chess/indexes/{name}.json
     pub async fn get_index<T: DeserializeOwned>(&self, name: &str) -> Result<(T, String), StoreError> {
         self.get_json("indexes", name).await
     }

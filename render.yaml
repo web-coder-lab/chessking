@@ -1,5 +1,6 @@
-# Genius Clan — API ONLY (native Android / Jetpack Compose client)
-# No website is deployed from this blueprint.
+# Genius Clan — API ONLY (native Android client)
+# Durable DB = GitHub repo folder chess/ (database_id dstabase7837638362826373)
+# Render keeps no permanent user data files.
 
 services:
   - type: web
@@ -16,8 +17,7 @@ services:
       - key: PORT
         value: "8080"
       - key: DATABASE_URL
-        value: sqlite:///data/genius_clan.db
-      # Deep links / email links point to API docs or future store listing
+        value: "sqlite::memory:"
       - key: FRONTEND_BASE_URL
         value: https://genius-clan-api.onrender.com
       - key: JWT_ACCESS_TTL_MIN
@@ -28,6 +28,16 @@ services:
         value: ""
       - key: CLIENT_MODE
         value: "native_android"
+      - key: GITHUB_DATA_OWNER
+        value: "web-coder-lab"
+      - key: GITHUB_DATA_REPO
+        value: "chessking"
+      - key: GITHUB_DATA_BRANCH
+        value: "main"
+      - key: GITHUB_DATA_ROOT
+        value: "chess"
+      # Set in Render dashboard only (never commit):
+      # GITHUB_DATA_TOKEN = GitHub PAT with repo scope
       - key: SMTP_HOST
         value: ""
       - key: SMTP_USER

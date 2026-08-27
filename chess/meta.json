@@ -1,0 +1,18 @@
+{
+  "database_id": "dstabase7837638362826373",
+  "name": "Genius Clan Chess Database",
+  "version": 1,
+  "root": "chess",
+  "engine": "github_contents_json",
+  "note": "Durable store in this repo. Render keeps no user data files.",
+  "collections": [
+    "users",
+    "sessions",
+    "sessions_by_hash",
+    "wallet",
+    "inventory",
+    "register_intents",
+    "indexes",
+    "matches"
+  ]
+}
