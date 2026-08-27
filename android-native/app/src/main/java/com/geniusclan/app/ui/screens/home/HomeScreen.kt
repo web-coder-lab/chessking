@@ -43,7 +43,9 @@ fun HomeScreen(
     onPlay: () -> Unit,
     onWallet: () -> Unit,
     onProfile: () -> Unit,
-    onSettings: () -> Unit = {}
+    onSettings: () -> Unit = {},
+    onShop: () -> Unit = {},
+    onInventory: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -61,6 +63,10 @@ fun HomeScreen(
         FeatureCard("🪙 Wallet", "Coins & checkout — Phase 3", onWallet)
         Spacer(modifier = Modifier.height(12.dp))
         FeatureCard("👤 Profile", "Edit bio & stats", onProfile)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🛒 Shop", "Buy avatars & banners", onShop)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🎒 Inventory", "Equip owned items", onInventory)
         Spacer(Modifier.height(12.dp))
         FeatureCard("⚙ Settings", "2FA, sessions, support, legal", onSettings)
 

@@ -19,6 +19,8 @@ object Routes {
     const val SETTINGS_PRIVACY = "settings/privacy"
     const val SETTINGS_TERMS = "settings/terms"
     const val SETTINGS_ABOUT = "settings/about"
+    const val SHOP = "shop"
+    const val INVENTORY = "inventory"
 
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }

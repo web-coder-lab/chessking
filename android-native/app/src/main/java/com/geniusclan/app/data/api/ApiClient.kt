@@ -395,6 +395,141 @@ object ApiClient {
         }
     }
 
+
+    data class ShopItemDto(
+        val id: String,
+        val name: String,
+        val category: String,
+        val priceCoins: Long,
+        val description: String = ""
+    )
+
+    data class InventoryItemDto(
+        val inventoryId: String,
+        val shopItemId: String,
+        val name: String,
+        val category: String,
+        val isEquipped: Boolean
+    )
+
+    fun listShopItems(category: String? = null): Result<List<ShopItemDto>> {
+        return try {
+            val path = if (category.isNullOrBlank()) "/shop/items" else "/shop/items?category=$category"
+            val req = authed(Request.Builder().url(api(path)).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val list = mutableListOf<ShopItemDto>()
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("items") ?: root.optJSONArray("data")
+                    else -> null
+                }
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        list.add(
+                            ShopItemDto(
+                                id = o.optString("id", o.optString("shop_item_id")),
+                                name = o.optString("name", "Item"),
+                                category = o.optString("category", "misc"),
+                                priceCoins = o.optLong("price_coins", o.optLong("price", 0)),
+                                description = o.optString("description", "")
+                            )
+                        )
+                    }
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun purchaseItem(shopItemId: String): Result<Unit> {
+        return try {
+            val body = JSONObject().put("shop_item_id", shopItemId).toString().toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/shop/purchase")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun listInventory(): Result<List<InventoryItemDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/inventory")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val list = mutableListOf<InventoryItemDto>()
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("items") ?: root.optJSONArray("inventory") ?: root.optJSONArray("data")
+                    else -> null
+                }
+                if (arr != null) {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.optJSONObject(i) ?: continue
+                        list.add(
+                            InventoryItemDto(
+                                inventoryId = o.optString("inventory_id", o.optString("id")),
+                                shopItemId = o.optString("shop_item_id"),
+                                name = o.optString("name", "Item"),
+                                category = o.optString("category", "misc"),
+                                isEquipped = o.optBoolean("is_equipped") || o.optInt("is_equipped") == 1
+                            )
+                        )
+                    }
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun equipItem(inventoryId: String): Result<Unit> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/inventory/$inventoryId/equip")).post("{}".toRequestBody(jsonMedia))
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun unequipItem(inventoryId: String): Result<Unit> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/inventory/$inventoryId/unequip")).post("{}".toRequestBody(jsonMedia))
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null

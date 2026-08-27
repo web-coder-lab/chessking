@@ -30,6 +30,8 @@ import com.geniusclan.app.ui.screens.settings.ChangeEmailScreen
 import com.geniusclan.app.ui.screens.settings.LegalScreen
 import com.geniusclan.app.ui.screens.settings.LegalKind
 import com.geniusclan.app.ui.screens.settings.BugReportScreen
+import com.geniusclan.app.ui.screens.shop.ShopScreen
+import com.geniusclan.app.ui.screens.shop.InventoryScreen
 
 @Composable
 fun AppNav() {
@@ -81,7 +83,9 @@ fun AppNav() {
                 onPlay = { nav.navigate(Routes.PLAY) },
                 onWallet = { nav.navigate(Routes.WALLET) },
                 onProfile = { nav.navigate(Routes.PROFILE) },
-                onSettings = { nav.navigate(Routes.SETTINGS) }
+                onSettings = { nav.navigate(Routes.SETTINGS) },
+                onShop = { nav.navigate(Routes.SHOP) },
+                onInventory = { nav.navigate(Routes.INVENTORY) }
             )
         }
         composable(Routes.PLAY) {
@@ -175,6 +179,18 @@ fun AppNav() {
         }
         composable(Routes.SETTINGS_ABOUT) {
             LegalScreen(LegalKind.ABOUT, onBack = { nav.popBackStack() })
+        }
+        composable(Routes.SHOP) {
+            ShopScreen(
+                onBack = { nav.popBackStack() },
+                onOpenInventory = { nav.navigate(Routes.INVENTORY) }
+            )
+        }
+        composable(Routes.INVENTORY) {
+            InventoryScreen(
+                onBack = { nav.popBackStack() },
+                onOpenShop = { nav.navigate(Routes.SHOP) }
+            )
         }
     }
 }
