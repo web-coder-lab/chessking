@@ -648,6 +648,141 @@ object ApiClient {
         }
     }
 
+
+    data class DailyStatusDto(val claimedToday: Boolean, val streakDay: Long, val nextCoins: Long)
+    data class LeaderboardEntryDto(val rank: Long, val username: String, val rating: Long)
+    data class NotificationDto(val id: String, val title: String, val body: String, val read: Boolean)
+    data class ReferralDto(val code: String, val shareUrl: String)
+
+    fun dailyStatus(): Result<DailyStatusDto> {
+        return try {
+            val req = authed(Request.Builder().url(api("/rewards/daily-status")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                Result.success(
+                    DailyStatusDto(
+                        claimedToday = o.optBoolean("claimed_today"),
+                        streakDay = o.optLong("current_streak_day"),
+                        nextCoins = o.optLong("next_reward_coins")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun claimDaily(): Result<Long> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/rewards/daily-claim")).post("{}".toRequestBody(jsonMedia))
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(JSONObject(text).optLong("coins_awarded"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun leaderboard(scope: String = "global"): Result<Pair<List<LeaderboardEntryDto>, Long?>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/leaderboard?scope=$scope")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                val arr = o.optJSONArray("rankings") ?: org.json.JSONArray()
+                val list = mutableListOf<LeaderboardEntryDto>()
+                for (i in 0 until arr.length()) {
+                    val r = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        LeaderboardEntryDto(
+                            rank = r.optLong("rank"),
+                            username = r.optString("username"),
+                            rating = r.optLong("rating")
+                        )
+                    )
+                }
+                val my = if (o.isNull("my_rank")) null else o.optLong("my_rank")
+                Result.success(list to my)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun notifications(): Result<List<NotificationDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/notifications")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("notifications") ?: root.optJSONArray("data")
+                    else -> null
+                } ?: org.json.JSONArray()
+                val list = mutableListOf<NotificationDto>()
+                for (i in 0 until arr.length()) {
+                    val n = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        NotificationDto(
+                            id = n.optString("id"),
+                            title = n.optString("title", n.optString("type", "Notice")),
+                            body = n.optString("body", n.optString("message", "")),
+                            read = n.optBoolean("is_read") || n.optBoolean("read")
+                        )
+                    )
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun markNotificationRead(id: String): Result<Unit> {
+        return try {
+            val req = authed(
+                Request.Builder().url(api("/notifications/$id/read")).post("{}".toRequestBody(jsonMedia))
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun referralLink(): Result<ReferralDto> {
+        return try {
+            val req = authed(Request.Builder().url(api("/referral/link")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                Result.success(
+                    ReferralDto(
+                        code = o.optString("invite_link_code"),
+                        shareUrl = o.optString("share_url")
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null

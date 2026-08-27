@@ -34,6 +34,10 @@ import com.geniusclan.app.ui.screens.settings.LegalKind
 import com.geniusclan.app.ui.screens.settings.BugReportScreen
 import com.geniusclan.app.ui.screens.shop.ShopScreen
 import com.geniusclan.app.ui.screens.shop.InventoryScreen
+import com.geniusclan.app.ui.screens.hub.DashboardScreen
+import com.geniusclan.app.ui.screens.hub.LeaderboardScreen
+import com.geniusclan.app.ui.screens.hub.NotificationsScreen
+import com.geniusclan.app.ui.screens.hub.InviteScreen
 
 @Composable
 fun AppNav() {
@@ -87,7 +91,11 @@ fun AppNav() {
                 onProfile = { nav.navigate(Routes.PROFILE) },
                 onSettings = { nav.navigate(Routes.SETTINGS) },
                 onShop = { nav.navigate(Routes.SHOP) },
-                onInventory = { nav.navigate(Routes.INVENTORY) }
+                onInventory = { nav.navigate(Routes.INVENTORY) },
+                onDashboard = { nav.navigate(Routes.DASHBOARD) },
+                onLeaderboard = { nav.navigate(Routes.LEADERBOARD) },
+                onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
+                onInvite = { nav.navigate(Routes.INVITE) }
             )
         }
         composable(Routes.PLAY) {
@@ -203,6 +211,24 @@ fun AppNav() {
                 onBack = { nav.popBackStack() },
                 onOpenShop = { nav.navigate(Routes.SHOP) }
             )
+        }
+        composable(Routes.DASHBOARD) {
+            DashboardScreen(
+                onBack = { nav.popBackStack() },
+                onPlay = { nav.navigate(Routes.PLAY) },
+                onLeaderboard = { nav.navigate(Routes.LEADERBOARD) },
+                onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
+                onInvite = { nav.navigate(Routes.INVITE) }
+            )
+        }
+        composable(Routes.LEADERBOARD) {
+            LeaderboardScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.INVITE) {
+            InviteScreen(onBack = { nav.popBackStack() })
         }
     }
 }

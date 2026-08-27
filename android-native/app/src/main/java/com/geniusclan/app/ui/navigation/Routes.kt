@@ -23,6 +23,10 @@ object Routes {
     const val INVENTORY = "inventory"
     const val CHECKOUT = "wallet/checkout"
     const val WALLET_HISTORY = "wallet/history"
+    const val DASHBOARD = "dashboard"
+    const val LEADERBOARD = "leaderboard"
+    const val NOTIFICATIONS = "notifications"
+    const val INVITE = "invite"
 
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }

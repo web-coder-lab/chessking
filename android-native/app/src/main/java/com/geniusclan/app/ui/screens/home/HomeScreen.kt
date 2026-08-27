@@ -45,7 +45,11 @@ fun HomeScreen(
     onProfile: () -> Unit,
     onSettings: () -> Unit = {},
     onShop: () -> Unit = {},
-    onInventory: () -> Unit = {}
+    onInventory: () -> Unit = {},
+    onDashboard: () -> Unit = {},
+    onLeaderboard: () -> Unit = {},
+    onNotifications: () -> Unit = {},
+    onInvite: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -58,7 +62,15 @@ fun HomeScreen(
         Text(text = subtitle, color = GcTextMuted, fontSize = 13.sp)
         Spacer(Modifier.height(24.dp))
 
-        FeatureCard("⚡ Quick Match", "Ranked & casual — Phase 4", onPlay)
+        FeatureCard("📊 Dashboard", "Daily claim, rating, coins", onDashboard)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("⚡ Quick Match", "Ranked & casual matchmaking", onPlay)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🏆 Leaderboard", "Global rankings", onLeaderboard)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🔔 Notifications", "Alerts & updates", onNotifications)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("📨 Invite", "Share referral code", onInvite)
         Spacer(Modifier.height(12.dp))
         FeatureCard("🪙 Wallet", "Coins & checkout — Phase 3", onWallet)
         Spacer(modifier = Modifier.height(12.dp))
