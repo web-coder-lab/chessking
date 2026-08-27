@@ -21,6 +21,16 @@ import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier.modifier
 import androidx.compose.ui.draw.clip
@@ -51,14 +61,47 @@ fun HomeScreen(
     onNotifications: () -> Unit = {},
     onInvite: () -> Unit = {},
     onCustomMatch: () -> Unit = {},
-    onMatchHistory: () -> Unit = {}
+    onMatchHistory: () -> Unit = {},
+    onPublicProfile: () -> Unit = {},
+    onGifts: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    var online by remember { mutableStateOf(true) }
+    DisposableEffect(Unit) {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        fun check(): Boolean {
+            val n = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(n) ?: return false
+            return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        online = check()
+        val cb = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) { online = true }
+            override fun onLost(network: Network) { online = check() }
+        }
+        try {
+            cm.registerDefaultNetworkCallback(cb)
+        } catch (_: Exception) {
+        }
+        onDispose {
+            try { cm.unregisterNetworkCallback(cb) } catch (_: Exception) {}
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(GcBg)
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
+        if (!online) {
+            Text(
+                text = "Offline — check your internet",
+                color = GcDanger,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
         Text(text = "Genius Clan", color = GcGold, fontWeight = FontWeight.Bold, fontSize = 14.sp)
         Text(text = title, color = GcText, fontWeight = FontWeight.Bold, fontSize = 28.sp)
         Text(text = subtitle, color = GcTextMuted, fontSize = 13.sp)
@@ -77,6 +120,10 @@ fun HomeScreen(
         FeatureCard("🔔 Notifications", "Alerts & updates", onNotifications)
         Spacer(Modifier.height(12.dp))
         FeatureCard("📨 Invite", "Share referral code", onInvite)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🔍 Find player", "Public profile", onPublicProfile)
+        Spacer(Modifier.height(12.dp))
+        FeatureCard("🎁 Gifts", "Send gift to a player", onGifts)
         Spacer(Modifier.height(12.dp))
         FeatureCard("🪙 Wallet", "Coins & checkout — Phase 3", onWallet)
         Spacer(modifier = Modifier.height(12.dp))

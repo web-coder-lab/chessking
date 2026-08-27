@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +56,7 @@ fun BoardScreen(
     var selected by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var ended by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showLeaveConfirm by remember { mutableStateOf(false) }
     var socket by remember { mutableStateOf<GameSocket?>(null) }
 
     val iAmWhite = myColor.equals("white", true)
@@ -137,7 +140,7 @@ fun BoardScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(onClick = onLeave) { Text("← Leave", color = GcGold) }
+            TextButton(onClick = { showLeaveConfirm = true }) { Text("← Leave", color = GcGold) }
             Text("You: $myColor", color = GcTextMuted, fontSize = 13.sp)
         }
         Text(status, color = GcText, fontWeight = FontWeight.SemiBold)
@@ -224,5 +227,23 @@ fun BoardScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
             ) { Text("Back to home") }
         }
+    }
+
+    if (showLeaveConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLeaveConfirm = false },
+            title = { Text("Leave match?") },
+            text = { Text("Do you want to leave this match? You may resign or lose the game.") },
+            confirmButton = {
+                TextButton(onClick = { showLeaveConfirm = false; onLeave() }) {
+                    Text("Leave", color = GcDanger)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLeaveConfirm = false }) {
+                    Text("Cancel", color = GcGold)
+                }
+            }
+        )
     }
 }

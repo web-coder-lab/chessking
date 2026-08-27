@@ -1008,6 +1008,86 @@ object ApiClient {
         }
     }
 
+
+    data class GiftItemDto(val id: String, val name: String, val priceCoins: Long)
+    data class PublicProfileDto(val username: String, val bio: String?, val rating: Int, val wins: Int, val losses: Int)
+
+    fun getPublicProfile(username: String): Result<PublicProfileDto> {
+        return try {
+            val q = java.net.URLEncoder.encode(username, "UTF-8")
+            val req = authed(Request.Builder().url(api("/profile/$q")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val o = JSONObject(text)
+                Result.success(
+                    PublicProfileDto(
+                        username = o.optString("username", username),
+                        bio = o.optString("bio").ifBlank { null },
+                        rating = o.optInt("rating", 1200),
+                        wins = o.optInt("wins", 0),
+                        losses = o.optInt("losses", 0)
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun giftCatalog(): Result<List<GiftItemDto>> {
+        return try {
+            val req = authed(Request.Builder().url(api("/gifts/catalog")).get()).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                val root = org.json.JSONTokener(text).nextValue()
+                val arr = when (root) {
+                    is org.json.JSONArray -> root
+                    is JSONObject -> root.optJSONArray("items") ?: root.optJSONArray("catalog") ?: root.optJSONArray("data")
+                    else -> null
+                } ?: org.json.JSONArray()
+                val list = mutableListOf<GiftItemDto>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    list.add(
+                        GiftItemDto(
+                            id = o.optString("id", o.optString("shop_item_id")),
+                            name = o.optString("name", "Gift"),
+                            priceCoins = o.optLong("price_coins", o.optLong("price", 0))
+                        )
+                    )
+                }
+                Result.success(list)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun sendGift(receiverUsername: String, shopItemId: String): Result<Unit> {
+        return try {
+            val body = JSONObject()
+                .put("receiver_username", receiverUsername)
+                .put("shop_item_id", shopItemId)
+                .put("context", "profile")
+                .put("match_id", JSONObject.NULL)
+                .toString()
+                .toRequestBody(jsonMedia)
+            val req = authed(
+                Request.Builder().url(api("/gifts/send")).post(body)
+                    .header("Content-Type", "application/json")
+            ).build()
+            client.newCall(req).execute().use { res ->
+                val text = res.body?.string().orEmpty()
+                if (!res.isSuccessful) return Result.failure(Exception(errorMessage(text, res.code)))
+                Result.success(Unit)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     fun logout() {
         accessToken = null
         refreshToken = null

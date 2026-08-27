@@ -43,6 +43,8 @@ import com.geniusclan.app.ui.screens.hub.NotificationsScreen
 import com.geniusclan.app.ui.screens.hub.InviteScreen
 import com.geniusclan.app.ui.screens.custom.CustomMatchScreen
 import com.geniusclan.app.ui.screens.custom.MatchHistoryScreen
+import com.geniusclan.app.ui.screens.social.PublicProfileScreen
+import com.geniusclan.app.ui.screens.social.GiftsScreen
 
 @Composable
 fun AppNav() {
@@ -139,7 +141,9 @@ fun AppNav() {
                 onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
                 onInvite = { nav.navigate(Routes.INVITE) },
                 onCustomMatch = { nav.navigate(Routes.CUSTOM_MATCH) },
-                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) }
+                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) },
+                onPublicProfile = { nav.navigate(Routes.PUBLIC_PROFILE) },
+                onGifts = { nav.navigate(Routes.gifts()) }
             )
         }
         composable(Routes.PLAY) {
@@ -264,7 +268,9 @@ fun AppNav() {
                 onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
                 onInvite = { nav.navigate(Routes.INVITE) },
                 onCustomMatch = { nav.navigate(Routes.CUSTOM_MATCH) },
-                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) }
+                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) },
+                onPublicProfile = { nav.navigate(Routes.PUBLIC_PROFILE) },
+                onGifts = { nav.navigate(Routes.gifts()) }
             )
         }
         composable(Routes.LEADERBOARD) {
@@ -286,6 +292,22 @@ fun AppNav() {
         }
         composable(Routes.MATCH_HISTORY) {
             MatchHistoryScreen(onBack = { nav.popBackStack() })
+        }
+        composable(Routes.PUBLIC_PROFILE) {
+            PublicProfileScreen(
+                onBack = { nav.popBackStack() },
+                onSendGift = { user -> nav.navigate(Routes.gifts(user)) }
+            )
+        }
+        composable(
+            route = Routes.GIFTS,
+            arguments = listOf(navArgument("username") { type = NavType.StringType })
+        ) { entry ->
+            val u = entry.arguments?.getString("username").orEmpty()
+            GiftsScreen(
+                onBack = { nav.popBackStack() },
+                prefillUsername = if (u == "_") "" else u
+            )
         }
     }
 }

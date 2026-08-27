@@ -35,5 +35,11 @@ object Routes {
 
     fun login2fa(pendingId: String) = "auth/2fa/$pendingId"
 
+    const val PUBLIC_PROFILE = "public-profile"
+    const val GIFTS = "gifts/{username}"
+    const val GIFTS_BLANK = "gifts/_"
+
+    fun gifts(username: String = "_") = "gifts/${username.ifBlank { "_" }}"
+
     fun board(matchId: String, color: String) = "board/$matchId/$color"
 }
