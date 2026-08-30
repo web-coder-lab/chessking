@@ -136,7 +136,7 @@ fun HomeScreen(
         Spacer(Modifier.height(12.dp))
         FeatureCard("⚙ Settings", "2FA, sessions, support, legal", onSettings)
 
-        Spacer(Modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
         BottomBar(onPlay = onPlay, onWallet = onWallet, onProfile = onProfile)
     }
 }
