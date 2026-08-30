@@ -1,18 +1,26 @@
 {
   "database_id": "dstabase7837638362826373",
   "name": "Genius Clan Chess Database",
-  "version": 1,
+  "version": 2,
   "root": "chess",
   "engine": "github_contents_json",
-  "note": "Durable store in this repo. Render keeps no user data files.",
+  "repo": "chessking",
+  "prepared": true,
+  "note": "Durable store under chess/. Render = sqlite::memory only.",
   "collections": [
     "users",
     "sessions",
-    "sessions_by_hash",
-    "wallet",
+    "daily_rewards",
     "inventory",
     "register_intents",
-    "indexes",
-    "matches"
+    "wallet",
+    "matches",
+    "indexes"
+  ],
+  "indexes": [
+    "users_by_email",
+    "users_by_username",
+    "sessions_by_hash",
+    "register_intents_by_email"
   ]
 }

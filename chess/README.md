@@ -1,28 +1,46 @@
-# chess/ — durable database (GitHub JSON)
+# chess/ — database `dstabase7837638362826373`
 
-**Database ID:** `dstabase7837638362826373`
+**Totally prepared durable database for Genius Clan.**
 
-Render API process holds **no permanent user data**.  
-All durable rows are JSON files under this folder:
+| Field | Value |
+|-------|--------|
+| Database ID | `dstabase7837638362826373` |
+| Root folder | `chess/` |
+| Repo | `web-coder-lab/chessking` |
+| Engine | GitHub Contents API (JSON files) |
+
+## Layout
 
 ```
 chess/
   meta.json
-  users/{user_id}.json
-  sessions/{session_id}.json
-  sessions_by_hash/{hash}.json
-  wallet/{user_id}.json
-  inventory/{user_id}.json
-  register_intents/{id}.json
-  matches/{match_id}.json
-  indexes/*.json
+  indexes/
+    users_by_email.json
+    users_by_username.json
+    sessions_by_hash.json
+    register_intents_by_email.json
+  users/
+  sessions/
+  daily_rewards/
+  inventory/
+  register_intents/
+  wallet/
+  matches/
+  _schema/          ← templates only (not live data)
 ```
 
-API uses GitHub Contents API with path prefix **`chess/`**.
+## API connection (Render)
 
-Env (Render):
-- `GITHUB_DATA_TOKEN` — PAT with `repo` scope
-- `GITHUB_DATA_OWNER` — e.g. `web-coder-lab`
-- `GITHUB_DATA_REPO` — e.g. `chessking`
-- `GITHUB_DATA_BRANCH` — `main`
-- `GITHUB_DATA_ROOT` — `chess` (default)
+```
+DATABASE_URL=sqlite::memory:
+GITHUB_DATA_OWNER=web-coder-lab
+GITHUB_DATA_REPO=chessking
+GITHUB_DATA_BRANCH=main
+GITHUB_DATA_ROOT=chess
+GITHUB_DATA_TOKEN=<PAT with repo scope>
+```
+
+Live rows are written by the API as:
+`chess/{collection}/{id}.json`
+
+Do not put secrets in this folder. Do not edit other repo folders for DB.
