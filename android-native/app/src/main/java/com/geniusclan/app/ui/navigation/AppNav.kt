@@ -266,11 +266,7 @@ fun AppNav() {
                 onPlay = { nav.navigate(Routes.PLAY) },
                 onLeaderboard = { nav.navigate(Routes.LEADERBOARD) },
                 onNotifications = { nav.navigate(Routes.NOTIFICATIONS) },
-                onInvite = { nav.navigate(Routes.INVITE) },
-                onCustomMatch = { nav.navigate(Routes.CUSTOM_MATCH) },
-                onMatchHistory = { nav.navigate(Routes.MATCH_HISTORY) },
-                onPublicProfile = { nav.navigate(Routes.PUBLIC_PROFILE) },
-                onGifts = { nav.navigate(Routes.gifts()) }
+                onInvite = { nav.navigate(Routes.INVITE) }
             )
         }
         composable(Routes.LEADERBOARD) {

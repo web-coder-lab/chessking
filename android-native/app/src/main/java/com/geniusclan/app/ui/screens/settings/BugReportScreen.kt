@@ -45,22 +45,52 @@ fun BugReportScreen(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Column(Modifier = Modifier.fillMaxSize().background(GcBg).padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("← Back", color = GcGold) }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(GcBg)
+            .padding(20.dp)
+    ) {
+        TextButton(onClick = onBack) { Text("\u2190 Back", color = GcGold) }
         Text("Bug report", color = GcText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
-            value = title, onValueChange = { title = it },
-            label = { Text("Title") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-            colors = colors()
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("Title") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GcGold,
+                unfocusedBorderColor = GcBorder,
+                focusedContainerColor = GcSurface,
+                unfocusedContainerColor = GcSurface,
+                focusedTextColor = GcText,
+                unfocusedTextColor = GcText,
+                cursorColor = GcGold,
+                focusedLabelColor = GcGold,
+                unfocusedLabelColor = GcTextMuted
+            )
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
-            value = desc, onValueChange = { desc = it },
+            value = desc,
+            onValueChange = { desc = it },
             label = { Text("Description") },
-            modifier = Modifier.fillMaxWidth().height(140.dp), shape = RoundedCornerShape(12.dp),
-            colors = colors()
+            modifier = Modifier.fillMaxWidth().height(140.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GcGold,
+                unfocusedBorderColor = GcBorder,
+                focusedContainerColor = GcSurface,
+                unfocusedContainerColor = GcSurface,
+                focusedTextColor = GcText,
+                unfocusedTextColor = GcText,
+                cursorColor = GcGold,
+                focusedLabelColor = GcGold,
+                unfocusedLabelColor = GcTextMuted
+            )
         )
         error?.let { Text(it, color = GcDanger, modifier = Modifier.padding(top = 8.dp)) }
         if (ok) Text("Report sent. Thank you.", color = GcGold, modifier = Modifier.padding(top = 8.dp))
@@ -71,31 +101,25 @@ fun BugReportScreen(onBack: () -> Unit) {
                     error = "Title and description required"
                     return@Button
                 }
-                loading = true; error = null; ok = false
+                loading = true
+                error = null
+                ok = false
                 scope.launch {
                     val r = withContext(Dispatchers.IO) { ApiClient.submitBugReport(title, desc) }
                     loading = false
-                    r.onSuccess { ok = true; title = ""; desc = "" }
-                        .onFailure { error = it.message }
+                    r.onSuccess {
+                        ok = true
+                        title = ""
+                        desc = ""
+                    }.onFailure { error = it.message }
                 }
             },
             enabled = !loading,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
-        ) { Text(if (loading) "Sending…" else "Submit") }
+        ) {
+            Text(if (loading) "Sending\u2026" else "Submit")
+        }
     }
 }
-
-@Composable
-private fun colors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = GcGold,
-    unfocusedBorderColor = GcBorder,
-    focusedContainerColor = GcSurface,
-    unfocusedContainerColor = GcSurface,
-    focusedTextColor = GcText,
-    unfocusedTextColor = GcText,
-    cursorColor = GcGold,
-    focusedLabelColor = GcGold,
-    unfocusedLabelColor = GcTextMuted
-)

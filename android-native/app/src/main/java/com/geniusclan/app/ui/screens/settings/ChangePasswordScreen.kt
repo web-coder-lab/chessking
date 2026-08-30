@@ -46,8 +46,13 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Column(Modifier = Modifier.fillMaxSize().background(GcBg).padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("← Back", color = GcGold) }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(GcBg)
+            .padding(20.dp)
+    ) {
+        TextButton(onClick = onBack) { Text("\u2190 Back", color = GcGold) }
         Text("Change password", color = GcText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
         Spacer(Modifier.height(16.dp))
         PwField(current, { current = it }, "Current password")
@@ -58,19 +63,26 @@ fun ChangePasswordScreen(onBack: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = {
-                loading = true; error = null; ok = false
+                loading = true
+                error = null
+                ok = false
                 scope.launch {
                     val r = withContext(Dispatchers.IO) { ApiClient.changePassword(current, next) }
                     loading = false
-                    r.onSuccess { ok = true; current = ""; next = "" }
-                        .onFailure { error = it.message }
+                    r.onSuccess {
+                        ok = true
+                        current = ""
+                        next = ""
+                    }.onFailure { error = it.message }
                 }
             },
             enabled = !loading,
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
-        ) { Text(if (loading) "Saving…" else "Save") }
+        ) {
+            Text(if (loading) "Saving\u2026" else "Save")
+        }
     }
 }
 

@@ -127,7 +127,7 @@ fun HomeScreen(
         FeatureCard("🎁 Gifts", "Send gift to a player", onGifts)
         Spacer(Modifier.height(12.dp))
         FeatureCard("🪙 Wallet", "Coins & checkout — Phase 3", onWallet)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
         FeatureCard("👤 Profile", "Edit bio & stats", onProfile)
         Spacer(Modifier.height(12.dp))
         FeatureCard("🛒 Shop", "Buy avatars & banners", onShop)

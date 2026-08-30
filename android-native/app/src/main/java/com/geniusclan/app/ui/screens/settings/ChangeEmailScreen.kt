@@ -46,31 +46,64 @@ fun ChangeEmailScreen(onBack: () -> Unit) {
     var loading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    Column(Modifier = Modifier.fillMaxSize().background(GcBg).padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("← Back", color = GcGold) }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(GcBg)
+            .padding(20.dp)
+    ) {
+        TextButton(onClick = onBack) { Text("\u2190 Back", color = GcGold) }
         Text("Change email", color = GcText, fontWeight = FontWeight.Bold, fontSize = 22.sp)
         Text("Confirm link may be sent to the new address.", color = GcTextMuted, fontSize = 13.sp)
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
-            value = email, onValueChange = { email = it },
-            label = { Text("New email") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-            colors = fieldColors()
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("New email") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GcGold,
+                unfocusedBorderColor = GcBorder,
+                focusedContainerColor = GcSurface,
+                unfocusedContainerColor = GcSurface,
+                focusedTextColor = GcText,
+                unfocusedTextColor = GcText,
+                cursorColor = GcGold,
+                focusedLabelColor = GcGold,
+                unfocusedLabelColor = GcTextMuted
+            )
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
-            value = password, onValueChange = { password = it },
-            label = { Text("Current password") }, singleLine = true,
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Current password") },
+            singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-            colors = fieldColors()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GcGold,
+                unfocusedBorderColor = GcBorder,
+                focusedContainerColor = GcSurface,
+                unfocusedContainerColor = GcSurface,
+                focusedTextColor = GcText,
+                unfocusedTextColor = GcText,
+                cursorColor = GcGold,
+                focusedLabelColor = GcGold,
+                unfocusedLabelColor = GcTextMuted
+            )
         )
         error?.let { Text(it, color = GcDanger, modifier = Modifier.padding(top = 8.dp)) }
         info?.let { Text(it, color = GcGold, modifier = Modifier.padding(top = 8.dp)) }
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = {
-                loading = true; error = null; info = null
+                loading = true
+                error = null
+                info = null
                 scope.launch {
                     val r = withContext(Dispatchers.IO) { ApiClient.changeEmail(password, email.trim()) }
                     loading = false
@@ -82,19 +115,8 @@ fun ChangeEmailScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = GcGold, contentColor = GcBg)
-        ) { Text(if (loading) "Sending…" else "Request change") }
+        ) {
+            Text(if (loading) "Sending\u2026" else "Request change")
+        }
     }
 }
-
-@Composable
-private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = GcGold,
-    unfocusedBorderColor = GcBorder,
-    focusedContainerColor = GcSurface,
-    unfocusedContainerColor = GcSurface,
-    focusedTextColor = GcText,
-    unfocusedTextColor = GcText,
-    cursorColor = GcGold,
-    focusedLabelColor = GcGold,
-    unfocusedLabelColor = GcTextMuted
-)
