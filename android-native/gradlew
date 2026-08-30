@@ -1,0 +1,8 @@
+#!/bin/sh
+# Gradle start script placeholder — CI generates real wrapper if missing
+DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+  exec java -jar "$DIR/gradle/wrapper/gradle-wrapper.jar" "$@"
+fi
+echo "Run: gradle wrapper --gradle-version 8.7"
+exit 1

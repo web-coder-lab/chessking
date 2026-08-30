@@ -15,6 +15,9 @@ on:
       - 'android-native/**'
       - '.github/workflows/build-native-apk.yml'
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -35,50 +38,47 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Decode keystore (release only)
-        if: ${{ github.event.inputs.build_type == 'release' }}
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > /tmp/genius-clan.jks
-            echo "HAS_KEYSTORE=1" >> $GITHUB_ENV
-          fi
-
       - name: Write local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Ensure Gradle wrapper
+      - name: Gradle wrapper
         run: |
           if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.7
+            gradle wrapper --gradle-version 8.7 || true
+          fi
+          if [ ! -f gradlew ]; then
+            curl -sL -o /tmp/gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+            sudo unzip -q /tmp/gradle-8.7-bin.zip -d /opt
+            /opt/gradle-8.7/bin/gradle wrapper --gradle-version 8.7
           fi
           chmod +x gradlew
 
       - name: Assemble debug
         if: ${{ github.event.inputs.build_type != 'release' }}
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Assemble release
+      - name: Assemble release (unsigned if no keystore)
         if: ${{ github.event.inputs.build_type == 'release' }}
-        env:
-          KEYSTORE_PATH: /tmp/genius-clan.jks
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Upload debug APK
-        if: ${{ github.event.inputs.build_type != 'release' }}
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: genius-clan-native-debug-apk
-          path: android-native/app/build/outputs/apk/debug/*.apk
+          name: genius-clan-apk
+          path: |
+            android-native/app/build/outputs/apk/**/*.apk
 
-      - name: Upload release APK
-        if: ${{ github.event.inputs.build_type == 'release' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: genius-clan-native-release-apk
-          path: android-native/app/build/outputs/apk/release/*.apk
+      - name: Publish APK into repo releases/
+        if: success()
+        working-directory: .
+        run: |
+          mkdir -p releases
+          APK=$(find android-native/app/build/outputs/apk -name "*.apk" | head -1)
+          if [ -z "$APK" ]; then echo "No APK found"; exit 1; fi
+          cp "$APK" releases/GeniusClan-debug.apk
+          ls -lh releases/
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add releases/GeniusClan-debug.apk
+          git commit -m "Build: GeniusClan native APK $(date -u +%Y-%m-%dT%H%MZ)" || echo "no change"
+          git push origin HEAD:main || true
