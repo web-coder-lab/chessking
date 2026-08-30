@@ -1,5 +1,5 @@
 # Genius Clan — API ONLY (native Android client)
-# Durable DB = GitHub repo folder chess/ (database_id dstabase7837638362826373)
+# Durable DB = repo dstabase7837638362826373 folder chessking/ (database_id dstabase7837638362826373)
 # Render keeps no permanent user data files.
 
 services:
@@ -31,11 +31,11 @@ services:
       - key: GITHUB_DATA_OWNER
         value: "web-coder-lab"
       - key: GITHUB_DATA_REPO
-        value: "chessking"
+        value: "dstabase7837638362826373"
       - key: GITHUB_DATA_BRANCH
         value: "main"
       - key: GITHUB_DATA_ROOT
-        value: "chess"
+        value: "chessking"
       # Set in Render dashboard only (never commit):
       # GITHUB_DATA_TOKEN = GitHub PAT with repo scope
       - key: SMTP_HOST

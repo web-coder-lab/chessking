@@ -1,5 +1,5 @@
 //! GitHub Contents API as durable JSON store (private repo).
-//! Render holds zero data files — every row is a file under chess/ (GITHUB_DATA_ROOT).
+//! Render holds zero data files — every row is a file under chessking/ in repo dstabase7837638362826373.
 //! Database ID: dstabase7837638362826373
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
@@ -53,7 +53,7 @@ struct ContentsListItem {
 
 impl GitHubStore {
     pub fn new(owner: String, repo: String, token: String, branch: String) -> Self {
-        Self::with_root(owner, repo, token, branch, "chess".into())
+        Self::with_root(owner, repo, token, branch, "chessking".into())
     }
 
     pub fn with_root(owner: String, repo: String, token: String, branch: String, root: String) -> Self {

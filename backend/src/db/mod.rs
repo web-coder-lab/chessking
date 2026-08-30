@@ -40,9 +40,9 @@ pub fn init_github_store_from_env() -> Option<SharedGitHubStore> {
     }
     let owner = std::env::var("GITHUB_DATA_OWNER").unwrap_or_else(|_| "web-coder-lab".into());
     // Same product repo by default — data lives under chess/
-    let repo = std::env::var("GITHUB_DATA_REPO").unwrap_or_else(|_| "chessking".into());
+    let repo = std::env::var("GITHUB_DATA_REPO").unwrap_or_else(|_| "dstabase7837638362826373".into());
     let branch = std::env::var("GITHUB_DATA_BRANCH").unwrap_or_else(|_| "main".into());
-    let root = std::env::var("GITHUB_DATA_ROOT").unwrap_or_else(|_| "chess".into());
+    let root = std::env::var("GITHUB_DATA_ROOT").unwrap_or_else(|_| "chessking".into());
     tracing::info!(
         "GitHub data store enabled: {owner}/{repo}@{branch} root={root} db=dstabase7837638362826373"
     );

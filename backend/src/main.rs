@@ -301,8 +301,8 @@ async fn health_store(State(state): State<AppState>) -> axum::response::Response
                 axum::Json(serde_json::json!({
                     "ok": true,
                     "store": "github",
-                    "repo": "chessking",
-                    "root": "chess",
+                    "repo": "dstabase7837638362826373",
+                    "root": "chessking",
                     "database_id": "dstabase7837638362826373"
                 })),
             )
