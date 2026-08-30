@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier.Modifier
+import androidx.compose.ui.Modifier
 import com.geniusclan.app.ui.navigation.AppNav
 import com.geniusclan.app.ui.theme.GcBg
 import com.geniusclan.app.ui.theme.GeniusClanTheme
