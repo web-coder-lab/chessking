@@ -25,3 +25,8 @@ backend/target/
 
 # Cargo
 Cargo.lock.bak
+android-native/.gradle/
+android-native/local.properties
+android-native/app/build/
+*.apk
+!releases/*.apk
