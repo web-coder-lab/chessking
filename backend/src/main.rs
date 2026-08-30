@@ -295,28 +295,41 @@ async fn health_store(State(state): State<AppState>) -> axum::response::Response
             })),
         )
             .into_response(),
-        Some(store) => match store.get_index::<serde_json::Value>("users_by_email").await {
-            Ok(_) => (
-                StatusCode::OK,
+        Some(store) => {
+            let probe = store.get_index::<serde_json::Value>("users_by_email").await;
+            let ok = match &probe {
+                Ok(_) => true,
+                Err(db::StoreError::NotFound) => true, // empty DB still connected
+                Err(_) => false,
+            };
+            let detail = match probe {
+                Ok(_) => "index_ok",
+                Err(db::StoreError::NotFound) => "index_empty_ok",
+                Err(e) => {
+                    return (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        axum::Json(serde_json::json!({
+                            "ok": false,
+                            "store": "github",
+                            "error": e.to_string()
+                        })),
+                    )
+                        .into_response();
+                }
+            };
+            (
+                if ok { StatusCode::OK } else { StatusCode::SERVICE_UNAVAILABLE },
                 axum::Json(serde_json::json!({
-                    "ok": true,
+                    "ok": ok,
                     "store": "github",
                     "repo": "dstabase7837638362826373",
                     "root": "chessking",
-                    "database_id": "dstabase7837638362826373"
+                    "database_id": "dstabase7837638362826373",
+                    "detail": detail
                 })),
             )
-                .into_response(),
-            Err(e) => (
-                StatusCode::SERVICE_UNAVAILABLE,
-                axum::Json(serde_json::json!({
-                    "ok": false,
-                    "store": "github",
-                    "error": e.to_string()
-                })),
-            )
-                .into_response(),
-        },
+                .into_response()
+        }
     }
 }
 

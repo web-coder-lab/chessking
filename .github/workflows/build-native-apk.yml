@@ -2,13 +2,6 @@ name: Build Native Compose APK
 
 on:
   workflow_dispatch:
-    inputs:
-      build_type:
-        description: debug or release
-        required: true
-        default: debug
-        type: choice
-        options: [debug, release]
   push:
     branches: [main]
     paths:
@@ -21,9 +14,6 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: android-native
     steps:
       - uses: actions/checkout@v4
 
@@ -32,53 +22,31 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Write local.properties
+      - name: local.properties
+        working-directory: android-native
         run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
-      - name: Gradle wrapper
+      - name: Assemble debug APK
+        working-directory: android-native
         run: |
-          if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.7 || true
-          fi
-          if [ ! -f gradlew ]; then
-            curl -sL -o /tmp/gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
-            sudo unzip -q /tmp/gradle-8.7-bin.zip -d /opt
-            /opt/gradle-8.7/bin/gradle wrapper --gradle-version 8.7
-          fi
           chmod +x gradlew
-
-      - name: Assemble debug
-        if: ${{ github.event.inputs.build_type != 'release' }}
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
-
-      - name: Assemble release (unsigned if no keystore)
-        if: ${{ github.event.inputs.build_type == 'release' }}
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: genius-clan-apk
-          path: |
-            android-native/app/build/outputs/apk/**/*.apk
+          name: GeniusClan-debug-apk
+          path: android-native/app/build/outputs/apk/debug/*.apk
 
-      - name: Publish APK into repo releases/
+      - name: Commit APK to releases/
         if: success()
-        working-directory: .
         run: |
           mkdir -p releases
-          APK=$(find android-native/app/build/outputs/apk -name "*.apk" | head -1)
-          if [ -z "$APK" ]; then echo "No APK found"; exit 1; fi
-          cp "$APK" releases/GeniusClan-debug.apk
-          ls -lh releases/
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          cp android-native/app/build/outputs/apk/debug/*.apk releases/GeniusClan-debug.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add releases/GeniusClan-debug.apk
-          git commit -m "Build: GeniusClan native APK $(date -u +%Y-%m-%dT%H%MZ)" || echo "no change"
-          git push origin HEAD:main || true
+          git commit -m "release: GeniusClan debug APK" || exit 0
+          git push
