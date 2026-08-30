@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +40,7 @@ import com.geniusclan.app.ui.theme.GcBoardLight
 import com.geniusclan.app.ui.theme.GcDanger
 import com.geniusclan.app.ui.theme.GcGold
 import com.geniusclan.app.ui.theme.GcGoldSoft
+import com.geniusclan.app.ui.theme.GcSurface
 import com.geniusclan.app.ui.theme.GcText
 import com.geniusclan.app.ui.theme.GcTextMuted
 import org.json.JSONObject
@@ -63,7 +63,8 @@ fun BoardScreen(
     val board = remember(fen) { Fen.board(fen) }
 
     DisposableEffect(matchId) {
-        val s = GameSocket(
+        lateinit var gameWs: GameSocket
+        gameWs = GameSocket(
             onEvent = { msg ->
                 when (msg.optString("type")) {
                     "board_sync", "board_update" -> {
@@ -92,13 +93,13 @@ fun BoardScreen(
             onState = { st ->
                 status = st
                 if (st == "open") {
-                    s.resumeMatch(matchId)
+                    gameWs.resumeMatch(matchId)
                 }
             }
         )
-        socket = s
-        s.connectMatch(matchId)
-        onDispose { s.close() }
+        socket = gameWs
+        gameWs.connectMatch(matchId)
+        onDispose { gameWs.close() }
     }
 
     fun tryMove(r: Int, c: Int) {

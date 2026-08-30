@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geniusclan.app.ui.theme.GcBg
+import com.geniusclan.app.ui.theme.GcDanger
 import com.geniusclan.app.ui.theme.GcBorder
 import com.geniusclan.app.ui.theme.GcGold
 import com.geniusclan.app.ui.theme.GcGoldSoft
